@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Tenant Self Service – Unified (v2)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    @keyframes slide-in-right { from { transform: translateX(20px); opacity: 0 } to { transform: translateX(0); opacity: 1 } }
+    .animate-slide-in-right { animation: slide-in-right .18s ease-out }
+    @keyframes toast-in { from { transform: translateY(6px); opacity:0 } to { transform: translateY(0); opacity:1 } }
+    .animate-toast-in { animation: toast-in .16s ease-out }
+    th.sortable { cursor:pointer; user-select:none; }
+  </style>
+</head>
+<body class="bg-gray-50">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useMemo } = React;
+
+    const I = {
+      Search: () => <span className="text-gray-400">🔎</span>,
+      Plus: () => <span>➕</span>,
+      Panel: () => <span>🗂️</span>,
+      ThreeDots: () => <span>⋯</span>,
+      Copy: () => <span>📋</span>,
+      Close: () => <span>✕</span>,
+      Check: () => <span>✅</span>,
+      X: () => <span>❌</span>,
+      Clock: () => <span>⏳</span>,
+      Up: () => <span>▲</span>,
+      Down: () => <span>▼</span>,
+      Sort: () => <span className="text-gray-400">↕</span>,
+    };
+
+    const statusColor = {
+      'Full': 'bg-green-100 text-green-700 border-green-200',
+      'Trial': 'bg-blue-100 text-blue-700 border-blue-200',
+      'Pause': 'bg-yellow-100 text-yellow-700 border-yellow-200',
+      'Offboarding': 'bg-orange-100 text-orange-700 border-orange-200',
+      'Closed': 'bg-gray-100 text-gray-700 border-gray-200',
+    };
+    const statusIcon = (s)=> s==='Full'? <I.Check/> : s==='Trial'? <I.Clock/> : <I.X/>;
+
+    const mockTenants = [
+      { customerId:'TSS', tenantId:'tenant-1', tenantDisplayName:'Alpha Solutions', customerName:'Alpha Corp', adminEmail:'admin1@example.com', adminFirstName:'John', adminLastName:'Doe', products:['DATABOLT_CORE','DATABOLT_DATABRICKS','DATABOLT_SNOWFLAKE'], tenantStatus:'Full', createdDate:'2025-01-15T10:30:00Z' },
+      { customerId:'TSS', tenantId:'tenant-2', tenantDisplayName:'Beta Analytics', customerName:'Beta Inc', adminEmail:'admin2@example.com', adminFirstName:'Jane', adminLastName:'Smith', products:['DATABOLT_CORE','DATABOLT_DATABRICKS'], tenantStatus:'Full', createdDate:'2025-02-01T14:20:00Z' },
+      { customerId:'TSS', tenantId:'tenant-5', tenantDisplayName:'Gamma Systems', customerName:'Gamma LLC', adminEmail:'admin5@example.com', adminFirstName:'David', adminLastName:'Brown', products:['DATABOLT_CORE','DATABOLT_SNOWFLAKE'], tenantStatus:'Trial', createdDate:'2025-03-10T09:15:00Z' },
+      { customerId:'TSS', tenantId:'tenant-6', tenantDisplayName:'Delta Partners', customerName:'Delta Group', adminEmail:'admin6@example.com', adminFirstName:'Lisa', adminLastName:'Garcia', products:['DATABOLT_CORE'], tenantStatus:'Pause', createdDate:'2024-11-20T16:45:00Z' }
+    ];
+
+    const mockRequests = [
+      {
+        id: 'req_1001', createdAt: '2025-09-24T10:15:00Z', updatedAt:'2025-09-24T10:15:06Z',
+        status: 'succeeded', eventType:'create', orderId:'00007C1SGNJL',
+        tenantDisplayName:'Alpha Prod', tenantId:'tenant-1', products:['DATABOLT_CORE','DATABOLT_DATABRICKS','DATABOLT_SNOWFLAKE'],
+        payload: { businessEvent: { tenantDisplayName:'Alpha Prod', tenantStatus:'Full' } },
+        response: { httpStatus:202, message:'Accepted', correlationId:'corr-1001' },
+        timeline: [
+          {ts:'2025-09-24T10:15:00Z', label:'Submitted'},
+          {ts:'2025-09-24T10:15:01Z', label:'Validated'},
+          {ts:'2025-09-24T10:15:02Z', label:'Queued'},
+          {ts:'2025-09-24T10:15:06Z', label:'Completed'}
+        ]
+      }
+    ];
+
+    const Toasts = ({toasts, onClose}) => (
+      <div className="fixed top-4 right-4 z-50 space-y-2">
+        {toasts.map(t => (
+          <div key={t.id} className={"animate-toast-in max-w-md px-4 py-3 rounded-lg border shadow " + (t.type==='error'?'bg-red-50 border-red-200 text-red-800': t.type==='success'?'bg-green-50 border-green-200 text-green-800':'bg-blue-50 border-blue-200 text-blue-800')}>
+            <div className="flex items-start gap-3">
+              <div className="pt-0.5">{t.type==='error'?'❌':t.type==='success'?'✅':'⏳'}</div>
+              <div className="text-sm flex-1">{t.msg}</div>
+              <button className="text-gray-400 hover:text-gray-600" onClick={()=>onClose(t.id)}>✕</button>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+
+    function App(){
+      const [tenants, setTenants] = useState(mockTenants);
+      const [search, setSearch] = useState('');
+      const [statusFilter, setStatusFilter] = useState('all');
+      const [sort, setSort] = useState({key:'createdDate', dir:'desc'}); // default newest first
+
+      const [showTenantDialog, setShowTenantDialog] = useState(false);
+      const [showSessionPanel, setShowSessionPanel] = useState(false);
+      const [toasts, setToasts] = useState([]);
+      const [requests, setRequests] = useState(mockRequests);
+      const [selectedRow, setSelectedRow] = useState(null);
+      const [showTenantModal, setShowTenantModal] = useState(false);
+
+      const addToast = (type,msg)=> setToasts(t=>[...t, {id: Date.now()+Math.random(), type, msg}]);
+      const rmToast = (id)=> setToasts(t=> t.filter(x=>x.id!==id));
+
+      const stats = {
+        total: tenants.length,
+        active: tenants.filter(t=>t.tenantStatus==='Full').length,
+        trial: tenants.filter(t=>t.tenantStatus==='Trial').length,
+        paused: tenants.filter(t=>t.tenantStatus==='Pause').length,
+      };
+
+      const sorters = {
+        tenantDisplayName: (a,b)=> a.tenantDisplayName.localeCompare(b.tenantDisplayName),
+        tenantId: (a,b)=> a.tenantId.localeCompare(b.tenantId),
+        adminEmail: (a,b)=> a.adminEmail.localeCompare(b.adminEmail),
+        tenantStatus: (a,b)=> a.tenantStatus.localeCompare(b.tenantStatus),
+        createdDate: (a,b)=> new Date(a.createdDate) - new Date(b.createdDate),
+      };
+
+      const filtered = useMemo(()=>{
+        const res = tenants.filter(t=>{
+          const q = search.toLowerCase();
+          const matchesQ = !q || [t.tenantDisplayName, t.tenantId, t.adminEmail].some(v=>v.toLowerCase().includes(q));
+          const matchesS = statusFilter==='all' || t.tenantStatus===statusFilter;
+          return matchesQ && matchesS;
+        });
+        const cmp = sorters[sort.key] || (()=>0);
+        res.sort((a,b)=> {
+          const v = cmp(a,b);
+          return sort.dir==='asc'? v : -v;
+        });
+        return res;
+      }, [search, statusFilter, tenants, sort]);
+
+      // Tenant Request dialog state + submit
+      const [form, setForm] = useState({
+        orderEventType:'create',
+        products:[],
+        customerName:'',
+        tenantDisplayName:'',
+        effectiveStartDate:'',
+        effectiveEndDate:'',
+        customerId:'',
+        orderId:'',
+        adminEmail:'',
+        adminFirstName:'',
+        adminLastName:'',
+        cloudProvider:'AWS',
+        globalRegion:'North America',
+        localRegion:'us-east-1',
+        countryCode:'US',
+        tenantStatus:'Trial'
+      });
+      const toggleProduct = (p)=>
+        setForm(f=> ({...f, products: f.products.includes(p) ? f.products.filter(x=>x!==p) : [...f.products, p]}));
+
+      const submitTenantRequest = (e)=>{
+        e.preventDefault();
+        if(form.products.length===0){
+          addToast('error','Please select at least one product.');
+          return;
+        }
+        const req = {
+          id: 'req_' + Math.floor(Math.random()*100000),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          status: 'succeeded',
+          eventType: form.orderEventType,
+          orderId: form.orderId || 'N/A',
+          tenantDisplayName: form.tenantDisplayName || '(no name)',
+          tenantId: 'tenant-' + Math.floor(Math.random()*999),
+          products: form.products,
+          payload: { businessEvent: {...form} },
+          response: { httpStatus:202, message:'Accepted', correlationId:'corr-'+Math.floor(Math.random()*999) },
+          timeline: [{ts:new Date().toISOString(), label:'Submitted'}, {ts:new Date().toISOString(), label:'Completed'}]
+        };
+        setRequests(r=>[req, ...r]);
+        setShowTenantDialog(false);
+        addToast('success','Request submitted.');
+      };
+
+      const SortHeader = ({label, k}) => (
+        <th className="px-6 py-3 text-left sortable" onClick={()=>{
+          setSort(s=> s.key===k ? ({key:k, dir: s.dir==='asc'?'desc':'asc'}) : ({key:k, dir:'asc'}));
+        }}>
+          <span className="inline-flex items-center gap-1">
+            {label}
+            {sort.key!==k ? <I.Sort/> : (sort.dir==='asc'? <I.Up/> : <I.Down/>)}
+          </span>
+        </th>
+      );
+
+      return (
+        <div className="min-h-screen">
+          <Toasts toasts={toasts} onClose={rmToast} />
+
+          {/* Header */}
+          <div className="bg-white border-b border-gray-200">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Tenant Self Service</h1>
+              <p className="mt-1 text-sm text-gray-600">Manage Databolt tenant onboarding and lifecycle</p>
+            </div>
+          </div>
+
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+            {/* Actions */}
+            <div className="flex items-center justify-end gap-3">
+              <button onClick={()=>setShowSessionPanel(true)} className="px-4 py-2 border rounded-lg text-gray-700 bg-white hover:bg-gray-50">
+                <span className="inline-flex items-center gap-2">🗂️ <span>Session requests</span></span>
+              </button>
+              <button onClick={()=>setShowTenantDialog(true)} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                <span className="inline-flex items-center gap-2">➕ <span>New tenant request</span></span>
+              </button>
+            </div>
+
+            {/* Filters + Help */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <div className="lg:col-span-2 bg-white border border-gray-200 rounded-lg p-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2">🔎</span>
+                    <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search by tenant name, ID, or email..." className="w-full pl-9 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                  </div>
+                  <div className="relative">
+                    <select value={statusFilter} onChange={e=>setStatusFilter(e.target.value)} className="w-full pl-3 pr-10 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                      <option value="all">All status</option>
+                      <option value="Full">Active (Full)</option>
+                      <option value="Trial">Trial</option>
+                      <option value="Pause">Paused</option>
+                      <option value="Offboarding">Offboarding</option>
+                      <option value="Closed">Closed</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-white border border-gray-200 rounded-lg p-4">
+                <p className="text-sm font-semibold text-gray-900 mb-2">Need help?</p>
+                <div className="space-y-2 text-sm">
+                  <a href="#" className="flex items-center gap-2 text-blue-600 hover:text-blue-700"><span>📖</span> Documentation</a>
+                  <a href="#" className="flex items-center gap-2 text-blue-600 hover:text-blue-700"><span>💬</span> #co2-support channel</a>
+                  <a href="mailto:c1s-synapse-pod@capitalone.com" className="flex items-center gap-2 text-blue-600 hover:text-blue-700"><span>✉️</span> Email support</a>
+                </div>
+              </div>
+            </div>
+
+            {/* KPI */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="bg-white border border-gray-200 rounded-lg p-4"><p className="text-xs text-gray-500">Total</p><p className="text-2xl font-bold">{stats.total}</p></div>
+              <div className="bg-white border border-gray-200 rounded-lg p-4"><p className="text-xs text-gray-500">Active (Full)</p><p className="text-2xl font-bold text-green-600">{stats.active}</p></div>
+              <div className="bg-white border border-gray-200 rounded-lg p-4"><p className="text-xs text-gray-500">Trial</p><p className="text-2xl font-bold text-blue-600">{stats.trial}</p></div>
+              <div className="bg-white border border-gray-200 rounded-lg p-4"><p className="text-xs text-gray-500">Paused</p><p className="text-2xl font-bold text-yellow-600">{stats.paused}</p></div>
+            </div>
+
+            {/* Table */}
+            <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 border-b border-gray-200">
+                    <tr className="text-xs font-semibold text-gray-600">
+                      <SortHeader label="Customer / Tenant" k="tenantDisplayName" />
+                      <SortHeader label="Tenant ID" k="tenantId" />
+                      <SortHeader label="Admin (email)" k="adminEmail" />
+                      <th className="px-6 py-3 text-left">Products</th>
+                      <SortHeader label="Status" k="tenantStatus" />
+                      <SortHeader label="Created" k="createdDate" />
+                      <th className="px-6 py-3 text-right"></th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 text-sm">
+                    {filtered.map(t=>(
+                      <tr key={t.tenantId} className="hover:bg-gray-50">
+                        <td className="px-6 py-4">
+                          <div className="text-sm font-medium text-gray-900">{t.tenantDisplayName}</div>
+                          <div className="text-xs text-gray-500">{t.customerName}</div>
+                        </td>
+                        <td className="px-6 py-4"><span className="font-mono">{t.tenantId}</span></td>
+                        <td className="px-6 py-4">
+                          <div className="text-gray-900">{t.adminFirstName} {t.adminLastName}</div>
+                          <div className="text-xs text-gray-500">{t.adminEmail}</div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-wrap gap-1">
+                            {t.products.slice(0,2).map(p=>(<span key={p} className="px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded">{p.replace('DATABOLT_','')}</span>))}
+                            {t.products.length>2 && <span className="text-xs text-gray-500">+{t.products.length-2}</span>}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex justify-start">
+                            <span className={"inline-flex items-center gap-1 px-2 py-1 rounded border text-xs font-medium "+statusColor[t.tenantStatus]}>
+                              {statusIcon(t.tenantStatus)} {t.tenantStatus}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-gray-600">{new Date(t.createdDate).toLocaleDateString()}</td>
+                        <td className="px-6 py-4 text-right">
+                          <button onClick={()=>{ setSelectedRow(t); setShowTenantModal(true); }} className="px-2 py-1 rounded hover:bg-gray-100">
+                            <I.ThreeDots/>
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                    {filtered.length===0 && (
+                      <tr><td colSpan="7" className="px-6 py-16 text-center text-gray-500">No tenants found. Adjust your filters.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          {/* Tenant details modal */}
+          {showTenantModal && selectedRow && (
+            <div className="fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-4">
+              <div className="bg-white w-full max-w-3xl max-h-[85vh] rounded-lg overflow-hidden shadow-lg animate-slide-in-right flex flex-col">
+                <div className="px-4 py-3 border-b flex items-center justify-between">
+                  <div className="font-semibold text-gray-900">Tenant Details – {selectedRow.tenantDisplayName}</div>
+                  <button className="text-gray-500 hover:text-gray-700" onClick={()=>setShowTenantModal(false)}><I.Close/></button>
+                </div>
+                <div className="p-4 overflow-auto space-y-4 text-sm flex-1">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-3 border rounded">
+                      <div className="text-gray-500">Tenant ID</div>
+                      <div className="font-mono">{selectedRow.tenantId}</div>
+                    </div>
+                    <div className="p-3 border rounded">
+                      <div className="text-gray-500">Customer</div>
+                      <div>{selectedRow.customerName}</div>
+                    </div>
+                    <div className="p-3 border rounded col-span-2">
+                      <div className="text-gray-500 mb-1">Admin</div>
+                      <div>{selectedRow.adminFirstName} {selectedRow.adminLastName} • {selectedRow.adminEmail}</div>
+                    </div>
+                    <div className="p-3 border rounded col-span-2">
+                      <div className="text-gray-500 mb-1">Products</div>
+                      <div className="flex flex-wrap gap-1">{selectedRow.products.map(p=><span key={p} className="px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded">{p.replace('DATABOLT_','')}</span>)}</div>
+                    </div>
+                  </div>
+                </div>
+                <div className="px-4 py-3 border-t bg-gray-50 text-right">
+                  <button className="px-3 py-1.5 border rounded" onClick={()=>{navigator.clipboard.writeText(selectedRow.tenantId);}}>Copy Tenant ID</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Tenant Request dialog – scrollable body */}
+          {showTenantDialog && (
+            <div className="fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-4">
+              <div className="bg-white w-full max-w-5xl max-h-[90vh] rounded-lg overflow-hidden shadow-lg animate-slide-in-right flex flex-col">
+                <div className="px-6 py-4 border-b flex items-center justify-between">
+                  <h2 className="text-lg font-bold text-gray-900">Tenant Request</h2>
+                  <button onClick={()=>setShowTenantDialog(false)} className="text-gray-500 hover:text-gray-700"><I.Close/></button>
+                </div>
+
+                <form onSubmit={submitTenantRequest} className="flex flex-col min-h-0 flex-1">
+                  <div className="px-6 pt-4">
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-800">
+                      <strong>Important:</strong> Do not enter your real name or any personal information (including an EID)
+                    </div>
+                  </div>
+
+                  {/* SCROLLABLE BODY */}
+                  <div className="px-6 py-4 overflow-y-auto space-y-6 flex-1">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-3">
+                        <h3 className="font-semibold text-gray-900 border-b pb-2">Business Information</h3>
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Customer Name *</label>
+                          <input className="w-full border rounded-lg px-3 py-2" value={form.customerName} onChange={e=>setForm({...form, customerName:e.target.value})} placeholder="e.g., Acme Corporation" required/>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Tenant Display Name *</label>
+                          <input className="w-full border rounded-lg px-3 py-2" value={form.tenantDisplayName} onChange={e=>setForm({...form, tenantDisplayName:e.target.value})} placeholder="e.g., Acme Prod Environment" required/>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-sm font-medium mb-1">Start Date *</label>
+                            <input type="date" className="w-full border rounded-lg px-3 py-2" value={form.effectiveStartDate} onChange={e=>setForm({...form, effectiveStartDate:e.target.value})} required/>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium mb-1">End Date *</label>
+                            <input type="date" className="w-full border rounded-lg px-3 py-2" value={form.effectiveEndDate} onChange={e=>setForm({...form, effectiveEndDate:e.target.value})} required/>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Customer ID *</label>
+                          <input className="w-full border rounded-lg px-3 py-2" value={form.customerId} onChange={e=>setForm({...form, customerId:e.target.value})} placeholder="e.g., C000WTQDXCSZ" required/>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Order ID *</label>
+                          <input className="w-full border rounded-lg px-3 py-2" value={form.orderId} onChange={e=>setForm({...form, orderId:e.target.value})} placeholder="e.g., 00007C1SGNJL" required/>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-sm font-medium mb-1">Order Event Type *</label>
+                            <select className="w-full border rounded-lg px-3 py-2" value={form.orderEventType} onChange={e=>setForm({...form, orderEventType:e.target.value})} required>
+                              <option value="create">Create</option>
+                              <option value="update">Update</option>
+                              <option value="pause">Pause</option>
+                              <option value="resume">Resume</option>
+                              <option value="delete">Delete</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text sm font-medium mb-1">Tenant Status *</label>
+                            <select className="w-full border rounded-lg px-3 py-2" value={form.tenantStatus} onChange={e=>setForm({...form, tenantStatus:e.target.value})} required>
+                              <option>Trial</option>
+                              <option>Full</option>
+                              <option>Pause</option>
+                              <option>Offboarding</option>
+                              <option>Closed</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <h3 className="font-semibold text-gray-900 border-b pb-2">Admin Information</h3>
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Admin Email *</label>
+                          <input type="email" className="w-full border rounded-lg px-3 py-2" value={form.adminEmail} onChange={e=>setForm({...form, adminEmail:e.target.value})} placeholder="admin@example.com" required/>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-sm font-medium mb-1">First Name *</label>
+                            <input className="w-full border rounded-lg px-3 py-2" value={form.adminFirstName} onChange={e=>setForm({...form, adminFirstName:e.target.value})} placeholder="John" required/>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium mb-1">Last Name *</label>
+                            <input className="w-full border rounded-lg px-3 py-2" value={form.adminLastName} onChange={e=>setForm({...form, adminLastName:e.target.value})} placeholder="Doe" required/>
+                          </div>
+                        </div>
+
+                        <h3 className="font-semibold text-gray-900 border-b pb-2 mt-4">Geo Location</h3>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-sm font-medium mb-1">Cloud Provider *</label>
+                            <select className="w-full border rounded-lg px-3 py-2" value={form.cloudProvider} onChange={e=>setForm({...form, cloudProvider:e.target.value})} required>
+                              <option>AWS</option><option>Azure</option><option>GCP</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium mb-1">Global Region *</label>
+                            <select className="w-full border rounded-lg px-3 py-2" value={form.globalRegion} onChange={e=>setForm({...form, globalRegion:e.target.value})} required>
+                              <option>North America</option><option>Europe</option><option>Asia Pacific</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium mb-1">Local Region *</label>
+                            <select className="w-full border rounded-lg px-3 py-2" value={form.localRegion} onChange={e=>setForm({...form, localRegion:e.target.value})} required>
+                              <option>us-east-1</option><option>us-east-2</option><option>us-west-2</option><option>eu-west-1</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium mb-1">Country Code *</label>
+                            <select className="w-full border rounded-lg px-3 py-2" value={form.countryCode} onChange={e=>setForm({...form, countryCode:e.target.value})} required>
+                              <option value="US">United States</option><option value="CA">Canada</option><option value="UK">United Kingdom</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                      <div className="space-y-3">
+                        <h3 className="font-semibold text-gray-900 border-b pb-2">Salesforce Information</h3>
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Salesforce Account ID</label>
+                          <input className="w-full border rounded-lg px-3 py-2" placeholder="e.g., ssadsad"/>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-sm font-medium mb-1">Product SKU ID</label>
+                            <input className="w-full border rounded-lg px-3 py-2" placeholder="e.g., S000L2XA55YF"/>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium mb-1">SKU Quantity</label>
+                            <input type="number" min="1" className="w-full border rounded-lg px-3 py-2" value="1" readOnly/>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <h3 className="font-semibold text-gray-900 border-b pb-2">Products *</h3>
+                        <label className="flex items-center gap-3 p-2 rounded hover:bg-gray-50 cursor-pointer">
+                          <input type="checkbox" checked={form.products.includes('DATABOLT_CORE')} onChange={()=>toggleProduct('DATABOLT_CORE')} className="w-4 h-4"/>
+                          <div><div className="text-sm font-medium">Databolt Core</div><div className="text-xs text-gray-500">Essential data platform features</div></div>
+                        </label>
+                        <label className="flex items-center gap-3 p-2 rounded hover:bg-gray-50 cursor-pointer">
+                          <input type="checkbox" checked={form.products.includes('DATABOLT_DATABRICKS')} onChange={()=>toggleProduct('DATABOLT_DATABRICKS')} className="w-4 h-4"/>
+                          <div><div className="text-sm font-medium">Databolt Databricks</div><div className="text-xs text-gray-500">Databricks integration</div></div>
+                        </label>
+                        <label className="flex items-center gap-3 p-2 rounded hover:bg-gray-50 cursor-pointer">
+                          <input type="checkbox" checked={form.products.includes('DATABOLT_SNOWFLAKE')} onChange={()=>toggleProduct('DATABOLT_SNOWFLAKE')} className="w-4 h-4"/>
+                          <div><div className="text-sm font-medium">Databolt Snowflake</div><div className="text-xs text-gray-500">Snowflake integration</div></div>
+                        </label>
+                        {form.products.length===0 && <p className="text-xs text-red-600">Please select at least one product</p>}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="px-6 py-4 border-t bg-gray-50 flex justify-end gap-3">
+                    <button type="button" onClick={()=>setShowTenantDialog(false)} className="px-4 py-2 border rounded-lg bg-white hover:bg-gray-50">Cancel</button>
+                    <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Submit request</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* Session Requests panel */}
+          {showSessionPanel && (
+            <div className="fixed inset-0 z-40">
+              <div className="absolute inset-0 bg-black/40" onClick={()=>setShowSessionPanel(false)}></div>
+              <div className="absolute right-0 top-0 h-full w-full sm:w-[420px] bg-white border-l border-gray-200 shadow-xl animate-slide-in-right flex flex-col">
+                <div className="px-4 py-3 border-b flex items-center justify-between">
+                  <div className="font-semibold text-gray-900">Session Requests</div>
+                  <button className="text-gray-500 hover:text-gray-700" onClick={()=>setShowSessionPanel(false)}><I.Close/></button>
+                </div>
+                {requests.length===0 ? (
+                  <div className="flex-1 flex items-center justify-center text-center p-8">
+                    <div>
+                      <div className="text-3xl mb-2">📈</div>
+                      <div className="font-medium text-gray-900">No requests yet</div>
+                      <div className="text-sm text-gray-500">Tenant requests created during this session will appear here.</div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                    {requests.map((r)=> (
+                      <div key={r.id} className="border rounded-lg p-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <div className="text-sm font-semibold text-gray-900">{r.tenantDisplayName}</div>
+                            <div className="text-xs text-gray-500 font-mono">{r.tenantId || 'pending assignment'}</div>
+                          </div>
+                          <div className="text-xs text-gray-500 font-mono">{r.id}</div>
+                        </div>
+                        <div className="mt-2 text-xs text-gray-600">Order <span className="font-mono">{r.orderId}</span> • Event <span className="capitalize">{r.eventType}</span></div>
+                        <div className="mt-2 flex flex-wrap gap-1">{r.products.map(p=><span key={p} className="px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded">{p.replace('DATABOLT_','')}</span>)}</div>
+
+                        <div className="mt-3 border rounded">
+                          <div className="px-2 py-1 border-b text-xs font-medium text-gray-900 flex items-center justify-between">
+                            <span>Payload</span>
+                            <button className="text-blue-600 hover:underline text-xs" onClick={()=>navigator.clipboard.writeText(JSON.stringify(r.payload,null,2))}><I.Copy/> Copy</button>
+                          </div>
+                          <pre className="p-2 text-[11px] max-h-40 overflow-auto bg-gray-50">{JSON.stringify(r.payload,null,2)}</pre>
+                        </div>
+
+                        <div className="mt-3 border rounded">
+                          <div className="px-2 py-1 border-b text-xs font-medium text-gray-900">Response</div>
+                          <pre className="p-2 text-[11px] max-h-28 overflow-auto bg-gray-50">{JSON.stringify(r.response,null,2)}</pre>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App/>);
+  </script>
+</body>
+</html>
