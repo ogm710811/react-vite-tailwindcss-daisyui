@@ -1,0 +1,2025 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Incident Management – C1S Forge Platform</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['DM Sans', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            forge: {
+              50: '#f8fafc',
+              100: '#f1f5f9',
+              200: '#e2e8f0',
+              300: '#cbd5e1',
+              400: '#94a3b8',
+              500: '#64748b',
+              600: '#475569',
+              700: '#334155',
+              800: '#1e293b',
+              900: '#0f172a',
+            },
+            c1s: {
+              red: '#d03027',
+              blue: '#004977',
+            },
+            incident: {
+              isolated: {
+                50: '#ecfdf5',
+                100: '#d1fae5',
+                200: '#a7f3d0',
+                300: '#6ee7b7',
+                400: '#34d399',
+                500: '#10b981',
+                600: '#059669',
+                700: '#047857',
+              },
+              enterprise: {
+                50: '#eff6ff',
+                100: '#dbeafe',
+                200: '#bfdbfe',
+                300: '#93c5fd',
+                400: '#60a5fa',
+                500: '#3b82f6',
+                600: '#2563eb',
+                700: '#1d4ed8',
+              }
+            }
+          },
+          animation: {
+            'slide-up': 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+            'slide-down': 'slideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+            'fade-in': 'fadeIn 0.3s ease-out',
+            'scale-in': 'scaleIn 0.2s ease-out',
+            'pulse-soft': 'pulseSoft 2s ease-in-out infinite',
+          },
+          keyframes: {
+            slideUp: {
+              '0%': { opacity: 0, transform: 'translateY(16px)' },
+              '100%': { opacity: 1, transform: 'translateY(0)' },
+            },
+            slideDown: {
+              '0%': { opacity: 1, transform: 'translateY(0)' },
+              '100%': { opacity: 0, transform: 'translateY(16px)' },
+            },
+            fadeIn: {
+              '0%': { opacity: 0 },
+              '100%': { opacity: 1 },
+            },
+            scaleIn: {
+              '0%': { opacity: 0, transform: 'scale(0.95)' },
+              '100%': { opacity: 1, transform: 'scale(1)' },
+            },
+            pulseSoft: {
+              '0%, 100%': { opacity: 1 },
+              '50%': { opacity: 0.7 },
+            },
+          },
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom scrollbar */
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 3px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    #steps-container > .step-node:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      right: -0.75rem;
+      top: 1.125rem;
+      width: 0.5rem;
+      height: 2px;
+      background: #e2e8f0;
+    }
+
+    /* Step node animations */
+    .step-node {
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .step-node:hover {
+      transform: translateY(-2px);
+    }
+    .step-node.active {
+      transform: translateY(-2px) scale(1.02);
+    }
+
+    /* Detail panel transitions */
+    .detail-panel {
+      display: grid;
+      grid-template-rows: 0fr;
+      transition: grid-template-rows 0.4s cubic-bezier(0.16, 1, 0.3, 1), 
+                  opacity 0.3s ease-out,
+                  margin 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      opacity: 0;
+      margin-top: 0;
+    }
+    .detail-panel.open {
+      grid-template-rows: 1fr;
+      opacity: 1;
+      margin-top: 1rem;
+    }
+    .detail-panel-inner {
+      overflow: hidden;
+    }
+
+    /* Card hover effects */
+    .hover-lift {
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .hover-lift:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.12);
+    }
+
+    /* Section transitions */
+    .view-section {
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    /* TOC smooth scroll highlight */
+    .toc-item {
+      transition: all 0.2s ease;
+    }
+    .toc-item:hover {
+      transform: translateX(4px);
+    }
+    .toc-item.active {
+      background: linear-gradient(90deg, rgba(14, 165, 233, 0.1) 0%, transparent 100%);
+      border-left-color: #0ea5e9;
+    }
+
+    /* Accordion */
+    .accordion-content {
+      display: grid;
+      grid-template-rows: 0fr;
+      transition: grid-template-rows 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .accordion-content.open {
+      grid-template-rows: 1fr;
+    }
+    .accordion-inner {
+      overflow: hidden;
+    }
+
+    /* Progress indicator */
+    .scroll-progress {
+      transform-origin: left;
+      transform: scaleX(0);
+      transition: transform 0.1s ease-out;
+    }
+  </style>
+</head>
+
+<body class="bg-forge-50 text-forge-900 font-sans antialiased">
+  
+  <!-- Main Container -->
+  <main class="max-w-6xl mx-auto px-6 py-8 lg:px-10 lg:py-10">
+    
+    <!-- Module Header -->
+    <header class="mb-8">
+      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+        <div class="flex items-start gap-4">
+<!--          <div class="flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-c1s-red to-rose-600 text-white shadow-lg shadow-rose-500/20">-->
+<!--            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">-->
+<!--              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>-->
+<!--              <line x1="12" y1="9" x2="12" y2="13"/>-->
+<!--              <line x1="12" y1="17" x2="12.01" y2="17"/>-->
+<!--            </svg>-->
+<!--          </div>-->
+          <div>
+            <h1 class="text-2xl font-semibold text-forge-900 tracking-tight">Incident Management</h1>
+            <p class="mt-1 text-sm text-forge-500 max-w-xl">
+              Prepare for incidents, follow consistent response workflows, and align on shared severity definitions across C1S.
+            </p>
+          </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <nav class="flex items-center">
+          <div class="inline-flex p-1 bg-white rounded-full border border-forge-200 shadow-sm" role="tablist">
+            <button
+                    type="button"
+                    class="nav-tab relative px-4 py-2 rounded-full text-sm font-medium transition-all duration-300"
+                    data-view="overview"
+                    role="tab"
+                    aria-selected="true"
+            >
+              <span class="relative z-10 text-white">Overview</span>
+              <div class="nav-tab-bg absolute inset-0 bg-forge-900 rounded-full opacity-100 transition-opacity duration-300"></div>
+            </button>
+            <button 
+              type="button"
+              class="nav-tab relative px-4 py-2 rounded-full text-sm font-medium transition-all duration-300"
+              data-view="preparing"
+              role="tab"
+              aria-selected="false"
+            >
+              <span class="relative z-10 text-forge-600">Preparing</span>
+              <div class="nav-tab-bg absolute inset-0 bg-forge-900 rounded-full opacity-0 transition-opacity duration-300"></div>
+            </button>
+            <button 
+              type="button"
+              class="nav-tab relative px-4 py-2 rounded-full text-sm font-medium transition-all duration-300"
+              data-view="responding"
+              role="tab"
+              aria-selected="false"
+            >
+              <span class="relative z-10 text-forge-600">Responding</span>
+              <div class="nav-tab-bg absolute inset-0 bg-forge-900 rounded-full opacity-0 transition-opacity duration-300"></div>
+            </button>
+            <button 
+              type="button"
+              class="nav-tab relative px-4 py-2 rounded-full text-sm font-medium transition-all duration-300"
+              data-view="severity"
+              role="tab"
+              aria-selected="false"
+            >
+              <span class="relative z-10 text-forge-600">Severity</span>
+              <div class="nav-tab-bg absolute inset-0 bg-forge-900 rounded-full opacity-0 transition-opacity duration-300"></div>
+            </button>
+          </div>
+        </nav>
+      </div>
+    </header>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- VIEW: Overview -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <section id="view-overview" class="view-section space-y-6" data-view="overview">
+      
+      <p class="text-sm text-forge-600 max-w-2xl">
+        Start from the area that best matches your goal. Whether you're setting up for future incidents or actively responding to one, these tools will guide you.
+      </p>
+
+      <!-- Feature Cards -->
+      <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        
+        <!-- Preparing Card -->
+        <article 
+          class="hover-lift group cursor-pointer rounded-2xl border border-forge-200 bg-white p-6 shadow-sm"
+          data-navigate="preparing"
+        >
+          <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-sky-100 text-sky-600 mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 11l3 3L22 4"/>
+              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+            </svg>
+          </div>
+          <h2 class="text-lg font-semibold text-forge-900 group-hover:text-sky-600 transition-colors">
+            Preparing for an Incident
+          </h2>
+          <p class="mt-2 text-sm text-forge-500 leading-relaxed">
+            Set up your teams, tools, and stakeholders before an incident happens. Configure PagerDuty, create playbooks, and define ownership.
+          </p>
+          <div class="mt-4 flex items-center gap-2">
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-sky-100 text-sky-700">
+              7 Topics
+            </span>
+            <span class="text-[10px] text-forge-400">~20 min setup</span>
+          </div>
+          <div class="mt-4 flex items-center text-sm font-medium text-sky-600">
+            Open guide
+            <svg xmlns="http://www.w3.org/2000/svg" class="ml-1 w-4 h-4 transition-transform group-hover:translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+            </svg>
+          </div>
+        </article>
+
+        <!-- Responding Card -->
+        <article 
+          class="hover-lift group cursor-pointer rounded-2xl border border-forge-200 bg-white p-6 shadow-sm"
+          data-navigate="responding"
+        >
+          <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-100 to-sky-100 text-emerald-600 mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M13 10V3L4 14h7v7l9-11h-7z"/>
+            </svg>
+          </div>
+          <h2 class="text-lg font-semibold text-forge-900 group-hover:text-emerald-600 transition-colors">
+            Responding to an Incident
+          </h2>
+          <p class="mt-2 text-sm text-forge-500 leading-relaxed">
+            Follow an interactive workflow from alert detection through triage, impact assessment, communication, and resolution.
+          </p>
+          <div class="mt-4 flex items-center gap-2">
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-100 text-emerald-700">
+              2 Paths
+            </span>
+            <span class="text-[10px] text-forge-400">Isolated & Enterprise</span>
+          </div>
+          <div class="mt-4 flex items-center text-sm font-medium text-emerald-600">
+            Start workflow
+            <svg xmlns="http://www.w3.org/2000/svg" class="ml-1 w-4 h-4 transition-transform group-hover:translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+            </svg>
+          </div>
+        </article>
+
+        <!-- Severity Card -->
+        <article 
+          class="hover-lift group cursor-pointer rounded-2xl border border-forge-200 bg-white p-6 shadow-sm"
+          data-navigate="severity"
+        >
+          <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-amber-100 text-amber-600 mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="7" height="7" rx="1"/>
+              <rect x="14" y="3" width="7" height="7" rx="1"/>
+              <rect x="3" y="14" width="7" height="7" rx="1"/>
+              <rect x="14" y="14" width="7" height="7" rx="1"/>
+            </svg>
+          </div>
+          <h2 class="text-lg font-semibold text-forge-900 group-hover:text-amber-600 transition-colors">
+            Severity Matrices
+          </h2>
+          <p class="mt-2 text-sm text-forge-500 leading-relaxed">
+            Align on shared definitions of impact and urgency so teams classify incidents consistently across C1S.
+          </p>
+          <div class="mt-4 flex items-center gap-2">
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-100 text-amber-700">
+              3 Products
+            </span>
+            <span class="text-[10px] text-forge-400">+ Enterprise fallback</span>
+          </div>
+          <div class="mt-4 flex items-center text-sm font-medium text-amber-600">
+            View matrices
+            <svg xmlns="http://www.w3.org/2000/svg" class="ml-1 w-4 h-4 transition-transform group-hover:translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+            </svg>
+          </div>
+        </article>
+      </div>
+
+      <!-- Quick Stats -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+        <div class="bg-white rounded-xl border border-forge-200 p-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-violet-100 flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-violet-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+            </div>
+            <div>
+              <p class="text-2xl font-semibold text-forge-900">8</p>
+              <p class="text-xs text-forge-500">Active Teams</p>
+            </div>
+          </div>
+        </div>
+        <div class="bg-white rounded-xl border border-forge-200 p-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+              </svg>
+            </div>
+            <div>
+              <p class="text-2xl font-semibold text-forge-900">12</p>
+              <p class="text-xs text-forge-500">Playbooks</p>
+            </div>
+          </div>
+        </div>
+        <div class="bg-white rounded-xl border border-forge-200 p-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-sky-100 flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-sky-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+              </svg>
+            </div>
+            <div>
+              <p class="text-2xl font-semibold text-forge-900">24/7</p>
+              <p class="text-xs text-forge-500">On-Call Coverage</p>
+            </div>
+          </div>
+        </div>
+        <div class="bg-white rounded-xl border border-forge-200 p-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-rose-100 flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-rose-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+              </svg>
+            </div>
+            <div>
+              <p class="text-2xl font-semibold text-forge-900">&lt;15m</p>
+              <p class="text-xs text-forge-500">Avg Response Time</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- VIEW: Preparing for an Incident -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <section id="view-preparing" class="view-section hidden space-y-6" data-view="preparing">
+      
+      <!-- Section Header -->
+      <div class="flex items-start gap-4 mb-6">
+        <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-sky-100 text-sky-600">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 11l3 3L22 4"/>
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+          </svg>
+        </div>
+        <div>
+          <h2 class="text-xl font-semibold text-forge-900">Preparing for an Incident</h2>
+          <p class="mt-1 text-sm text-forge-500">The best incident response starts before the first page. Complete this checklist to ensure readiness.</p>
+        </div>
+      </div>
+
+      <div class="grid lg:grid-cols-[280px_1fr] gap-6">
+        
+        <!-- Table of Contents - Sticky Sidebar -->
+        <aside class="lg:sticky lg:top-6 lg:self-start">
+          <div class="bg-white rounded-2xl border border-forge-200 shadow-sm overflow-hidden">
+            <div class="px-4 py-3 border-b border-forge-100 bg-forge-50">
+              <h3 class="text-xs font-semibold uppercase tracking-wide text-forge-500">Quick Links</h3>
+            </div>
+            <nav class="p-2">
+              <a href="#prep-pagerduty-access" class="toc-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-forge-600 hover:text-forge-900 hover:bg-forge-50 border-l-2 border-transparent">
+                <span class="flex items-center justify-center w-6 h-6 rounded-md bg-forge-100 text-forge-500 text-xs font-semibold">1</span>
+                PagerDuty Access
+              </a>
+              <a href="#prep-pagerduty-teams" class="toc-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-forge-600 hover:text-forge-900 hover:bg-forge-50 border-l-2 border-transparent">
+                <span class="flex items-center justify-center w-6 h-6 rounded-md bg-forge-100 text-forge-500 text-xs font-semibold">2</span>
+                PagerDuty Teams
+              </a>
+              <a href="#prep-change-management" class="toc-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-forge-600 hover:text-forge-900 hover:bg-forge-50 border-l-2 border-transparent">
+                <span class="flex items-center justify-center w-6 h-6 rounded-md bg-forge-100 text-forge-500 text-xs font-semibold">3</span>
+                Change Management
+              </a>
+              <a href="#prep-playbooks" class="toc-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-forge-600 hover:text-forge-900 hover:bg-forge-50 border-l-2 border-transparent">
+                <span class="flex items-center justify-center w-6 h-6 rounded-md bg-forge-100 text-forge-500 text-xs font-semibold">4</span>
+                Playbooks
+              </a>
+              <a href="#prep-severity" class="toc-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-forge-600 hover:text-forge-900 hover:bg-forge-50 border-l-2 border-transparent">
+                <span class="flex items-center justify-center w-6 h-6 rounded-md bg-forge-100 text-forge-500 text-xs font-semibold">5</span>
+                Severity Matrices
+              </a>
+              <a href="#prep-dependencies" class="toc-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-forge-600 hover:text-forge-900 hover:bg-forge-50 border-l-2 border-transparent">
+                <span class="flex items-center justify-center w-6 h-6 rounded-md bg-forge-100 text-forge-500 text-xs font-semibold">6</span>
+                Dependencies
+              </a>
+              <a href="#prep-stakeholders" class="toc-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-forge-600 hover:text-forge-900 hover:bg-forge-50 border-l-2 border-transparent">
+                <span class="flex items-center justify-center w-6 h-6 rounded-md bg-forge-100 text-forge-500 text-xs font-semibold">7</span>
+                Stakeholders
+              </a>
+            </nav>
+          </div>
+        </aside>
+
+        <!-- Content Sections -->
+        <div class="space-y-6">
+          
+          <!-- 1. PagerDuty Access -->
+          <article id="prep-pagerduty-access" class="bg-white rounded-2xl border border-forge-200 shadow-sm overflow-hidden scroll-mt-6">
+            <div class="px-6 py-4 border-b border-forge-100 flex items-center gap-3">
+              <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-sky-100 text-sky-600 text-sm font-semibold">1</span>
+              <div>
+                <h3 class="font-semibold text-forge-900">PagerDuty Access</h3>
+                <p class="text-xs text-forge-500">Ensure you can receive and acknowledge alerts</p>
+              </div>
+            </div>
+            <div class="p-6">
+              <p class="text-sm text-forge-600 leading-relaxed">
+                Every engineer on an on-call rotation must have a PagerDuty account and be able to receive notifications. Verify your access is working before your first rotation.
+              </p>
+              
+              <div class="mt-4 space-y-3">
+                <div class="flex items-start gap-3 p-3 rounded-lg bg-forge-50 border border-forge-100">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-sky-500 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                  </svg>
+                  <div>
+                    <p class="text-sm font-medium text-forge-900">Install the PagerDuty mobile app</p>
+                    <p class="text-xs text-forge-500 mt-0.5">Available on iOS and Android for push notifications</p>
+                  </div>
+                </div>
+                <div class="flex items-start gap-3 p-3 rounded-lg bg-forge-50 border border-forge-100">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-sky-500 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                  </svg>
+                  <div>
+                    <p class="text-sm font-medium text-forge-900">Configure notification preferences</p>
+                    <p class="text-xs text-forge-500 mt-0.5">Set up phone, SMS, and email escalation paths</p>
+                  </div>
+                </div>
+                <div class="flex items-start gap-3 p-3 rounded-lg bg-forge-50 border border-forge-100">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-sky-500 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                  </svg>
+                  <div>
+                    <p class="text-sm font-medium text-forge-900">Test with a self-page</p>
+                    <p class="text-xs text-forge-500 mt-0.5">Trigger a test incident to verify end-to-end delivery</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-5 flex items-center gap-3">
+                <a href="https://capitalone.pagerduty.com" target="_blank" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-sky-500 text-white text-sm font-medium hover:bg-sky-600 transition-colors">
+                  Open PagerDuty
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+                  </svg>
+                </a>
+                <a href="#" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-forge-100 text-forge-700 text-sm font-medium hover:bg-forge-200 transition-colors">
+                  Request Access
+                </a>
+              </div>
+            </div>
+          </article>
+
+          <!-- 2. PagerDuty Teams -->
+          <article id="prep-pagerduty-teams" class="bg-white rounded-2xl border border-forge-200 shadow-sm overflow-hidden scroll-mt-6">
+            <div class="px-6 py-4 border-b border-forge-100 flex items-center gap-3">
+              <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-sky-100 text-sky-600 text-sm font-semibold">2</span>
+              <div>
+                <h3 class="font-semibold text-forge-900">PagerDuty Teams</h3>
+                <p class="text-xs text-forge-500">Join the correct team and schedule</p>
+              </div>
+            </div>
+            <div class="p-6">
+              <p class="text-sm text-forge-600 leading-relaxed">
+                Make sure you're added to the correct PagerDuty team and on-call schedule. Your team lead or manager should add you during onboarding.
+              </p>
+              
+              <div class="mt-4 grid sm:grid-cols-2 gap-3">
+                <div class="p-4 rounded-xl border border-forge-200 bg-forge-50/50">
+                  <h4 class="text-sm font-medium text-forge-900">Slingshot On-Call</h4>
+                  <p class="text-xs text-forge-500 mt-1">Primary rotation for Slingshot services</p>
+                  <a href="#" class="mt-3 inline-flex items-center text-xs font-medium text-sky-600 hover:text-sky-500">
+                    View schedule →
+                  </a>
+                </div>
+                <div class="p-4 rounded-xl border border-forge-200 bg-forge-50/50">
+                  <h4 class="text-sm font-medium text-forge-900">Databolt On-Call</h4>
+                  <p class="text-xs text-forge-500 mt-1">Primary rotation for Databolt services</p>
+                  <a href="#" class="mt-3 inline-flex items-center text-xs font-medium text-sky-600 hover:text-sky-500">
+                    View schedule →
+                  </a>
+                </div>
+              </div>
+
+              <div class="mt-5">
+                <a href="#" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-sky-500 text-white text-sm font-medium hover:bg-sky-600 transition-colors">
+                  View All Teams
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+                  </svg>
+                </a>
+              </div>
+            </div>
+          </article>
+
+          <!-- 3. Change Management -->
+          <article id="prep-change-management" class="bg-white rounded-2xl border border-forge-200 shadow-sm overflow-hidden scroll-mt-6">
+            <div class="px-6 py-4 border-b border-forge-100 flex items-center gap-3">
+              <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-sky-100 text-sky-600 text-sm font-semibold">3</span>
+              <div>
+                <h3 class="font-semibold text-forge-900">Change Management / Assignment Groups</h3>
+                <p class="text-xs text-forge-500">Know your ServiceNow assignment groups</p>
+              </div>
+            </div>
+            <div class="p-6">
+              <p class="text-sm text-forge-600 leading-relaxed">
+                Understanding your assignment groups helps route incidents correctly and ensures proper change management during incident resolution.
+              </p>
+              
+              <div class="mt-4 p-4 rounded-xl bg-amber-50 border border-amber-200">
+                <div class="flex items-start gap-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-amber-600 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                  <div>
+                    <p class="text-sm font-medium text-amber-900">Emergency changes still require documentation</p>
+                    <p class="text-xs text-amber-700 mt-1">Even during an incident, document changes in ServiceNow for audit compliance.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-5">
+                <a href="#" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-sky-500 text-white text-sm font-medium hover:bg-sky-600 transition-colors">
+                  Open ServiceNow
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+                  </svg>
+                </a>
+              </div>
+            </div>
+          </article>
+
+          <!-- 4. Playbooks -->
+          <article id="prep-playbooks" class="bg-white rounded-2xl border border-forge-200 shadow-sm overflow-hidden scroll-mt-6">
+            <div class="px-6 py-4 border-b border-forge-100 flex items-center gap-3">
+              <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-sky-100 text-sky-600 text-sm font-semibold">4</span>
+              <div>
+                <h3 class="font-semibold text-forge-900">Playbooks</h3>
+                <p class="text-xs text-forge-500">Pre-defined response procedures for common scenarios</p>
+              </div>
+            </div>
+            <div class="p-6">
+              <p class="text-sm text-forge-600 leading-relaxed">
+                Every team should maintain playbooks for their services. Playbooks document known failure modes, runbooks, and escalation paths.
+              </p>
+              
+              <div class="mt-4 space-y-2">
+                <a href="#" class="flex items-center justify-between p-3 rounded-lg border border-forge-200 hover:border-sky-300 hover:bg-sky-50/50 transition-all group">
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                      </svg>
+                    </div>
+                    <div>
+                      <p class="text-sm font-medium text-forge-900">Slingshot Playbook</p>
+                      <p class="text-xs text-forge-500">12 runbooks • Updated 3 days ago</p>
+                    </div>
+                  </div>
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-forge-400 group-hover:text-sky-500 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+                  </svg>
+                </a>
+                <a href="#" class="flex items-center justify-between p-3 rounded-lg border border-forge-200 hover:border-sky-300 hover:bg-sky-50/50 transition-all group">
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                      </svg>
+                    </div>
+                    <div>
+                      <p class="text-sm font-medium text-forge-900">Databolt Playbook</p>
+                      <p class="text-xs text-forge-500">8 runbooks • Updated 1 week ago</p>
+                    </div>
+                  </div>
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-forge-400 group-hover:text-sky-500 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+                  </svg>
+                </a>
+              </div>
+
+              <div class="mt-5">
+                <a href="#" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-forge-100 text-forge-700 text-sm font-medium hover:bg-forge-200 transition-colors">
+                  Create New Playbook
+                </a>
+              </div>
+            </div>
+          </article>
+
+          <!-- 5. Severity Matrices -->
+          <article id="prep-severity" class="bg-white rounded-2xl border border-forge-200 shadow-sm overflow-hidden scroll-mt-6">
+            <div class="px-6 py-4 border-b border-forge-100 flex items-center gap-3">
+              <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-sky-100 text-sky-600 text-sm font-semibold">5</span>
+              <div>
+                <h3 class="font-semibold text-forge-900">Severity Matrices</h3>
+                <p class="text-xs text-forge-500">Consistent incident classification</p>
+              </div>
+            </div>
+            <div class="p-6">
+              <p class="text-sm text-forge-600 leading-relaxed">
+                Familiarize yourself with your team's severity matrix before an incident occurs. This ensures consistent classification and appropriate response.
+              </p>
+              
+              <div class="mt-4 flex items-center gap-3">
+                <button 
+                  type="button"
+                  class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-500 text-white text-sm font-medium hover:bg-amber-600 transition-colors"
+                  data-navigate="severity"
+                >
+                  View Severity Matrices
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </article>
+
+          <!-- 6. Dependencies -->
+          <article id="prep-dependencies" class="bg-white rounded-2xl border border-forge-200 shadow-sm overflow-hidden scroll-mt-6">
+            <div class="px-6 py-4 border-b border-forge-100 flex items-center gap-3">
+              <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-sky-100 text-sky-600 text-sm font-semibold">6</span>
+              <div>
+                <h3 class="font-semibold text-forge-900">Identifying Dependencies</h3>
+                <p class="text-xs text-forge-500">Know your upstream and downstream services</p>
+              </div>
+            </div>
+            <div class="p-6">
+              <p class="text-sm text-forge-600 leading-relaxed">
+                Understanding your service dependencies is critical for rapid incident diagnosis. Map out which services you depend on and which services depend on you.
+              </p>
+              
+              <div class="mt-4 grid sm:grid-cols-2 gap-4">
+                <div class="p-4 rounded-xl border border-forge-200">
+                  <div class="flex items-center gap-2 mb-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-rose-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M12 19V5"/>
+                      <path d="m5 12 7-7 7 7"/>
+                    </svg>
+                    <h4 class="text-sm font-medium text-forge-900">Upstream (you depend on)</h4>
+                  </div>
+                  <p class="text-xs text-forge-500">Services whose failure affects your service</p>
+                </div>
+                <div class="p-4 rounded-xl border border-forge-200">
+                  <div class="flex items-center gap-2 mb-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M12 5v14"/>
+                      <path d="m5 12 7 7 7-7"/>
+                    </svg>
+                    <h4 class="text-sm font-medium text-forge-900">Downstream (depends on you)</h4>
+                  </div>
+                  <p class="text-xs text-forge-500">Services affected by your outages</p>
+                </div>
+              </div>
+
+              <div class="mt-5">
+                <a href="#" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-sky-500 text-white text-sm font-medium hover:bg-sky-600 transition-colors">
+                  View Service Map
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+                  </svg>
+                </a>
+              </div>
+            </div>
+          </article>
+
+          <!-- 7. Stakeholders -->
+          <article id="prep-stakeholders" class="bg-white rounded-2xl border border-forge-200 shadow-sm overflow-hidden scroll-mt-6">
+            <div class="px-6 py-4 border-b border-forge-100 flex items-center gap-3">
+              <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-sky-100 text-sky-600 text-sm font-semibold">7</span>
+              <div>
+                <h3 class="font-semibold text-forge-900">Stakeholders</h3>
+                <p class="text-xs text-forge-500">Know who to communicate with during incidents</p>
+              </div>
+            </div>
+            <div class="p-6">
+              <p class="text-sm text-forge-600 leading-relaxed">
+                Identify key stakeholders for your services before an incident occurs. This includes product owners, engineering leadership, and dependent team leads.
+              </p>
+              
+              <div class="mt-4 space-y-3">
+                <div class="flex items-center gap-3 p-3 rounded-lg bg-forge-50 border border-forge-100">
+                  <div class="w-8 h-8 rounded-full bg-violet-200 flex items-center justify-center text-violet-700 text-xs font-semibold">
+                    PO
+                  </div>
+                  <div>
+                    <p class="text-sm font-medium text-forge-900">Product Owner</p>
+                    <p class="text-xs text-forge-500">Business impact assessment and prioritization</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-3 p-3 rounded-lg bg-forge-50 border border-forge-100">
+                  <div class="w-8 h-8 rounded-full bg-sky-200 flex items-center justify-center text-sky-700 text-xs font-semibold">
+                    EM
+                  </div>
+                  <div>
+                    <p class="text-sm font-medium text-forge-900">Engineering Manager</p>
+                    <p class="text-xs text-forge-500">Resource allocation and escalation</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-3 p-3 rounded-lg bg-forge-50 border border-forge-100">
+                  <div class="w-8 h-8 rounded-full bg-emerald-200 flex items-center justify-center text-emerald-700 text-xs font-semibold">
+                    CS
+                  </div>
+                  <div>
+                    <p class="text-sm font-medium text-forge-900">Customer Support</p>
+                    <p class="text-xs text-forge-500">Customer communication and ticket management</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-5">
+                <a href="#" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-forge-100 text-forge-700 text-sm font-medium hover:bg-forge-200 transition-colors">
+                  Edit Stakeholder List
+                </a>
+              </div>
+            </div>
+          </article>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- VIEW: Responding to an Incident -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <section id="view-responding" class="view-section hidden space-y-6" data-view="responding">
+      
+      <!-- Section Header -->
+      <div class="flex items-start gap-4 mb-6">
+        <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-sky-500 text-white shadow-lg shadow-emerald-500/20">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M13 10V3L4 14h7v7l9-11h-7z"/>
+          </svg>
+        </div>
+        <div>
+          <h2 class="text-xl font-semibold text-forge-900">Responding to an Incident</h2>
+          <p class="mt-1 text-sm text-forge-500">Follow the guided workflow from alert to resolution</p>
+        </div>
+      </div>
+
+      <!-- Path Selection -->
+      <div class="bg-white rounded-2xl border border-forge-200 shadow-sm overflow-hidden">
+        
+        <!-- Path Selector Header -->
+        <div class="px-6 py-4 border-b border-forge-100 bg-gradient-to-r from-forge-50 to-white">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h3 class="text-sm font-semibold text-forge-800">Select Your Incident Path</h3>
+              <p class="text-xs text-forge-500 mt-0.5">Choose based on the scope and impact of your incident</p>
+            </div>
+            
+            <!-- Path Toggle -->
+            <div class="inline-flex p-1 bg-forge-100 rounded-xl" role="tablist">
+              <button 
+                type="button"
+                id="path-btn-isolated"
+                class="path-btn relative px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300"
+                data-path="isolated"
+                role="tab"
+                aria-selected="true"
+              >
+                <span class="relative z-10 flex items-center gap-2">
+                  <span class="w-2 h-2 rounded-full bg-incident-isolated-500"></span>
+                  Isolated Incident
+                </span>
+                <div class="path-bg absolute inset-0 bg-white rounded-lg shadow-sm opacity-100 transition-opacity duration-300"></div>
+              </button>
+              <button 
+                type="button"
+                id="path-btn-enterprise"
+                class="path-btn relative px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300"
+                data-path="enterprise"
+                role="tab"
+                aria-selected="false"
+              >
+                <span class="relative z-10 flex items-center gap-2">
+                  <span class="w-2 h-2 rounded-full bg-incident-enterprise-500"></span>
+                  Enterprise Wide
+                </span>
+                <div class="path-bg absolute inset-0 bg-white rounded-lg shadow-sm opacity-0 transition-opacity duration-300"></div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Path Description Cards -->
+        <div class="px-6 py-4 grid sm:grid-cols-2 gap-4">
+          <div 
+            id="path-desc-isolated" 
+            class="path-desc p-4 rounded-xl border-2 transition-all duration-300 cursor-pointer border-incident-isolated-300 bg-incident-isolated-50"
+            data-path="isolated"
+          >
+            <div class="flex items-start gap-3">
+              <div class="flex-shrink-0 w-10 h-10 rounded-lg bg-incident-isolated-100 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-incident-isolated-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="3"/>
+                  <path d="M12 2v4m0 12v4M2 12h4m12 0h4"/>
+                </svg>
+              </div>
+              <div class="flex-1 min-w-0">
+                <h4 class="font-semibold text-forge-900 text-sm">Isolated Incident</h4>
+                <p class="text-xs text-forge-500 mt-1 leading-relaxed">
+                  Single service or component affected. Team can handle independently.
+                </p>
+                <div class="mt-3 flex items-center gap-2">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-incident-isolated-100 text-incident-isolated-700">
+                    8 Steps
+                  </span>
+                  <span class="text-[10px] text-forge-400">~15 min typical</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div 
+            id="path-desc-enterprise" 
+            class="path-desc p-4 rounded-xl border-2 transition-all duration-300 cursor-pointer border-forge-200 bg-white"
+            data-path="enterprise"
+          >
+            <div class="flex items-start gap-3">
+              <div class="flex-shrink-0 w-10 h-10 rounded-lg bg-incident-enterprise-100 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-incident-enterprise-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                  <path d="M2 17l10 5 10-5"/>
+                  <path d="M2 12l10 5 10-5"/>
+                </svg>
+              </div>
+              <div class="flex-1 min-w-0">
+                <h4 class="font-semibold text-forge-900 text-sm">Enterprise / LOB Wide</h4>
+                <p class="text-xs text-forge-500 mt-1 leading-relaxed">
+                  Multiple services or business lines impacted. Requires incident manager.
+                </p>
+                <div class="mt-3 flex items-center gap-2">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-incident-enterprise-100 text-incident-enterprise-700">
+                    9 Steps
+                  </span>
+                  <span class="text-[10px] text-forge-400">~30 min typical</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Journey Timeline -->
+      <div class="bg-white rounded-2xl border border-forge-200 shadow-sm overflow-hidden">
+        
+        <!-- Timeline Header -->
+        <div class="px-6 py-4 border-b border-forge-100 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <h3 class="text-sm font-semibold text-forge-800">Response Journey</h3>
+            <span 
+              id="journey-progress-badge"
+              class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-medium bg-forge-100 text-forge-600"
+            >
+              Step <span id="current-step-num">1</span> of <span id="total-steps-num">8</span>
+            </span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button 
+              type="button" 
+              id="btn-prev-step"
+              class="p-2 rounded-lg text-forge-400 hover:text-forge-600 hover:bg-forge-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              disabled
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+              </svg>
+            </button>
+            <button 
+              type="button" 
+              id="btn-next-step"
+              class="p-2 rounded-lg text-forge-400 hover:text-forge-600 hover:bg-forge-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Timeline Visualization -->
+        <div class="px-6 py-6">
+          <!-- Progress Track -->
+          <div class="relative mb-2">
+            <div class="h-1 bg-forge-100 rounded-full overflow-hidden">
+              <div 
+                id="progress-bar"
+                class="h-full rounded-full transition-all duration-500 ease-out bg-incident-isolated-500"
+                style="width: 0%"
+              ></div>
+            </div>
+          </div>
+
+          <!-- Steps Container -->
+          <div class="custom-scroll overflow-x-auto pb-4 -mx-2 px-2">
+            <div 
+              id="steps-container"
+              class="flex items-start justify-center gap-4 pt-4"
+            >
+              <!-- Steps rendered by JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Detail Panel -->
+        <div id="detail-panel" class="detail-panel border-t border-forge-100">
+          <div class="detail-panel-inner">
+            <div class="px-6 py-6 bg-gradient-to-b from-forge-50/50 to-white">
+              <div class="max-w-3xl">
+                <!-- Step Header -->
+                <div class="flex items-start gap-4 mb-4">
+                  <div 
+                    id="detail-icon"
+                    class="flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-lg bg-incident-isolated-500"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                      <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                    </svg>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-1">
+                      <span 
+                        id="detail-step-badge"
+                        class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide bg-incident-isolated-100 text-incident-isolated-700"
+                      >
+                        Step 1
+                      </span>
+                      <span 
+                        id="detail-phase-badge"
+                        class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-forge-100 text-forge-600"
+                      >
+                        Detection
+                      </span>
+                    </div>
+                    <h4 id="detail-title" class="text-lg font-semibold text-forge-900">Alert Received</h4>
+                  </div>
+                </div>
+
+                <!-- Step Content -->
+                <div id="detail-content" class="prose prose-sm prose-forge max-w-none text-forge-600">
+                  <!-- Content rendered by JS -->
+                </div>
+
+                <!-- Actions -->
+                <div id="detail-actions" class="mt-6 flex flex-wrap items-center gap-3">
+                  <!-- Actions rendered by JS -->
+                </div>
+
+                <!-- Navigation -->
+                <div class="mt-6 pt-4 border-t border-forge-100 flex items-center justify-between">
+                  <button 
+                    type="button"
+                    id="detail-btn-prev"
+                    class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-forge-600 hover:bg-forge-50 transition-colors disabled:opacity-40"
+                    disabled
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                    Previous Step
+                  </button>
+                  <button 
+                    type="button"
+                    id="detail-btn-next"
+                    class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white bg-incident-isolated-500 transition-colors hover:opacity-90"
+                  >
+                    Next Step
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Reference -->
+      <div class="grid sm:grid-cols-3 gap-4">
+        <a 
+          href="#" 
+          class="group p-4 bg-white rounded-xl border border-forge-200 hover:border-forge-300 hover:shadow-sm transition-all"
+        >
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+              </svg>
+            </div>
+            <div>
+              <p class="text-sm font-medium text-forge-900 group-hover:text-amber-600 transition-colors">PagerDuty</p>
+              <p class="text-xs text-forge-500">Check on-call schedule</p>
+            </div>
+          </div>
+        </a>
+        <a 
+          href="#" 
+          class="group p-4 bg-white rounded-xl border border-forge-200 hover:border-forge-300 hover:shadow-sm transition-all"
+        >
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-violet-100 flex items-center justify-center text-violet-600">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M2 12h5l2 9 4-18 2 9h7"/>
+              </svg>
+            </div>
+            <div>
+              <p class="text-sm font-medium text-forge-900 group-hover:text-violet-600 transition-colors">Observe Dashboards</p>
+              <p class="text-xs text-forge-500">View team metrics</p>
+            </div>
+          </div>
+        </a>
+        <a 
+          href="#" 
+          class="group p-4 bg-white rounded-xl border border-forge-200 hover:border-forge-300 hover:shadow-sm transition-all"
+        >
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-sky-100 flex items-center justify-center text-sky-600">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+              </svg>
+            </div>
+            <div>
+              <p class="text-sm font-medium text-forge-900 group-hover:text-sky-600 transition-colors">Team Playbooks</p>
+              <p class="text-xs text-forge-500">Response procedures</p>
+            </div>
+          </div>
+        </a>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- VIEW: Severity Matrices -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <section id="view-severity" class="view-section hidden space-y-6" data-view="severity">
+      
+      <!-- Section Header -->
+      <div class="flex items-start gap-4 mb-6">
+        <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-amber-100 text-amber-600">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7" rx="1"/>
+            <rect x="14" y="3" width="7" height="7" rx="1"/>
+            <rect x="3" y="14" width="7" height="7" rx="1"/>
+            <rect x="14" y="14" width="7" height="7" rx="1"/>
+          </svg>
+        </div>
+        <div>
+          <h2 class="text-xl font-semibold text-forge-900">Severity Matrices</h2>
+          <p class="mt-1 text-sm text-forge-500">Consistent incident classification across C1S products</p>
+        </div>
+      </div>
+
+      <!-- Intro Card -->
+      <div class="bg-white rounded-2xl border border-forge-200 shadow-sm p-6">
+        <p class="text-sm text-forge-600 leading-relaxed">
+          Severity Matrices are essential to categorizing and correctly triaging incidents. Severity Matrices are reviewed on an annual basis. Please work on familiarizing yourself with the matrix for your product.
+        </p>
+      </div>
+
+      <!-- Product Matrices Grid -->
+      <div class="grid lg:grid-cols-2 gap-6">
+        
+        <!-- Slingshot -->
+        <article id="severity-slingshot" class="bg-white rounded-2xl border border-forge-200 shadow-sm overflow-hidden hover-lift">
+          <div class="px-6 py-4 border-b border-forge-100 bg-gradient-to-r from-emerald-50 to-white">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                </svg>
+              </div>
+              <div>
+                <h3 class="font-semibold text-forge-900">Slingshot</h3>
+                <p class="text-xs text-forge-500">Severity matrix for Slingshot services</p>
+              </div>
+            </div>
+          </div>
+          <div class="p-6">
+            <p class="text-sm text-forge-600 leading-relaxed">
+              Use the Slingshot severity matrix when working incidents related to Slingshot services or features.
+            </p>
+            
+            <!-- Quick Reference Table -->
+            <div class="mt-4 rounded-xl border border-forge-200 overflow-hidden">
+              <table class="w-full text-xs">
+                <thead class="bg-forge-50">
+                  <tr>
+                    <th class="px-3 py-2 text-left font-semibold text-forge-700">Severity</th>
+                    <th class="px-3 py-2 text-left font-semibold text-forge-700">Impact</th>
+                    <th class="px-3 py-2 text-left font-semibold text-forge-700">Response</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-forge-100">
+                  <tr>
+                    <td class="px-3 py-2"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-100 text-red-700">SEV-1</span></td>
+                    <td class="px-3 py-2 text-forge-600">Complete outage</td>
+                    <td class="px-3 py-2 text-forge-600">Immediate</td>
+                  </tr>
+                  <tr>
+                    <td class="px-3 py-2"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-orange-100 text-orange-700">SEV-2</span></td>
+                    <td class="px-3 py-2 text-forge-600">Major degradation</td>
+                    <td class="px-3 py-2 text-forge-600">&lt; 30 min</td>
+                  </tr>
+                  <tr>
+                    <td class="px-3 py-2"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-700">SEV-3</span></td>
+                    <td class="px-3 py-2 text-forge-600">Partial degradation</td>
+                    <td class="px-3 py-2 text-forge-600">&lt; 4 hrs</td>
+                  </tr>
+                  <tr>
+                    <td class="px-3 py-2"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-sky-100 text-sky-700">SEV-4</span></td>
+                    <td class="px-3 py-2 text-forge-600">Minor issue</td>
+                    <td class="px-3 py-2 text-forge-600">Next business day</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="mt-5">
+              <a 
+                href="https://confluence.kdc.capitalone.com/display/SProduct/Slingshot+Severity+Matrix+-+NEW" 
+                target="_blank"
+                class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 text-white text-sm font-medium hover:bg-emerald-600 transition-colors"
+              >
+                Open Full Matrix
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+                </svg>
+              </a>
+            </div>
+          </div>
+        </article>
+
+        <!-- Databolt -->
+        <article id="severity-databolt" class="bg-white rounded-2xl border border-forge-200 shadow-sm overflow-hidden hover-lift">
+          <div class="px-6 py-4 border-b border-forge-100 bg-gradient-to-r from-blue-50 to-white">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                  <line x1="12" y1="22.08" x2="12" y2="12"/>
+                </svg>
+              </div>
+              <div>
+                <h3 class="font-semibold text-forge-900">Databolt</h3>
+                <p class="text-xs text-forge-500">Severity matrix for Databolt services</p>
+              </div>
+            </div>
+          </div>
+          <div class="p-6">
+            <p class="text-sm text-forge-600 leading-relaxed">
+              Use the Databolt severity matrix when working incidents related to Databolt data pipeline and orchestration services.
+            </p>
+            
+            <!-- Quick Reference Table -->
+            <div class="mt-4 rounded-xl border border-forge-200 overflow-hidden">
+              <table class="w-full text-xs">
+                <thead class="bg-forge-50">
+                  <tr>
+                    <th class="px-3 py-2 text-left font-semibold text-forge-700">Severity</th>
+                    <th class="px-3 py-2 text-left font-semibold text-forge-700">Impact</th>
+                    <th class="px-3 py-2 text-left font-semibold text-forge-700">Response</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-forge-100">
+                  <tr>
+                    <td class="px-3 py-2"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-100 text-red-700">SEV-1</span></td>
+                    <td class="px-3 py-2 text-forge-600">Pipeline failure</td>
+                    <td class="px-3 py-2 text-forge-600">Immediate</td>
+                  </tr>
+                  <tr>
+                    <td class="px-3 py-2"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-orange-100 text-orange-700">SEV-2</span></td>
+                    <td class="px-3 py-2 text-forge-600">Data delays</td>
+                    <td class="px-3 py-2 text-forge-600">&lt; 30 min</td>
+                  </tr>
+                  <tr>
+                    <td class="px-3 py-2"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-700">SEV-3</span></td>
+                    <td class="px-3 py-2 text-forge-600">Partial impact</td>
+                    <td class="px-3 py-2 text-forge-600">&lt; 4 hrs</td>
+                  </tr>
+                  <tr>
+                    <td class="px-3 py-2"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-sky-100 text-sky-700">SEV-4</span></td>
+                    <td class="px-3 py-2 text-forge-600">Minor issue</td>
+                    <td class="px-3 py-2 text-forge-600">Next business day</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="mt-5">
+              <a 
+                href="https://docs.google.com/spreadsheets/d/18myTquR-M3JQpVKa9IHLw7vf94APKA0E4Y5PPe9n" 
+                target="_blank"
+                class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500 text-white text-sm font-medium hover:bg-blue-600 transition-colors"
+              >
+                Open Full Matrix
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+                </svg>
+              </a>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <!-- Enterprise Fallback -->
+      <article class="bg-gradient-to-br from-forge-800 to-forge-900 rounded-2xl border border-forge-700 shadow-lg overflow-hidden">
+        <div class="p-6 md:p-8">
+          <div class="flex flex-col md:flex-row md:items-center gap-6">
+            <div class="flex-shrink-0">
+              <div class="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                  <path d="M2 17l10 5 10-5"/>
+                  <path d="M2 12l10 5 10-5"/>
+                </svg>
+              </div>
+            </div>
+            <div class="flex-1">
+              <h3 class="text-lg font-semibold text-white">Enterprise Severity Matrix</h3>
+              <p class="mt-2 text-sm text-forge-300 leading-relaxed">
+                If you are unsure or do not have a listed Severity Matrix relevant to your team, please refer to the Enterprise Severity Matrix as a baseline for incident classification.
+              </p>
+            </div>
+            <div class="flex-shrink-0">
+              <a 
+                href="https://docs.google.com/spreadsheets/d/1F-qODDL-XxP8c0KS3WqKksRw1sPiaNLnEQlLevdyTOA/edit?gid=817594504#gid=817594504" 
+                target="_blank"
+                class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-forge-900 text-sm font-medium hover:bg-forge-100 transition-colors"
+              >
+                Open Enterprise Matrix
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+                </svg>
+              </a>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- Severity Level Reference -->
+      <article class="bg-white rounded-2xl border border-forge-200 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-forge-100">
+          <h3 class="font-semibold text-forge-900">Severity Level Quick Reference</h3>
+          <p class="text-xs text-forge-500 mt-1">General guidelines for incident classification</p>
+        </div>
+        <div class="p-6">
+          <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            
+            <div class="p-4 rounded-xl border-2 border-red-200 bg-red-50">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-red-500 text-white">SEV-1</span>
+                <span class="text-xs font-medium text-red-700">Critical</span>
+              </div>
+              <p class="text-xs text-red-800 leading-relaxed">
+                Complete service outage affecting all users. Revenue-impacting. Requires immediate all-hands response.
+              </p>
+            </div>
+
+            <div class="p-4 rounded-xl border-2 border-orange-200 bg-orange-50">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-orange-500 text-white">SEV-2</span>
+                <span class="text-xs font-medium text-orange-700">High</span>
+              </div>
+              <p class="text-xs text-orange-800 leading-relaxed">
+                Major functionality degraded. Significant user impact. Requires rapid response within 30 minutes.
+              </p>
+            </div>
+
+            <div class="p-4 rounded-xl border-2 border-amber-200 bg-amber-50">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-amber-500 text-white">SEV-3</span>
+                <span class="text-xs font-medium text-amber-700">Medium</span>
+              </div>
+              <p class="text-xs text-amber-800 leading-relaxed">
+                Partial degradation or workaround available. Limited user impact. Respond within business hours.
+              </p>
+            </div>
+
+            <div class="p-4 rounded-xl border-2 border-sky-200 bg-sky-50">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-sky-500 text-white">SEV-4</span>
+                <span class="text-xs font-medium text-sky-700">Low</span>
+              </div>
+              <p class="text-xs text-sky-800 leading-relaxed">
+                Minor issue, cosmetic, or feature request. No immediate impact. Address in normal sprint cycle.
+              </p>
+            </div>
+
+          </div>
+        </div>
+      </article>
+
+    </section>
+
+  </main>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- JavaScript -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <script>
+    (function() {
+      // ═══════════════════════════════════════════════════════════════════════
+      // NAVIGATION
+      // ═══════════════════════════════════════════════════════════════════════
+      
+      const navTabs = document.querySelectorAll('.nav-tab');
+      const viewSections = document.querySelectorAll('.view-section');
+      const navigateCards = document.querySelectorAll('[data-navigate]');
+      
+      function switchView(viewName) {
+        // Update tabs
+        navTabs.forEach(tab => {
+          const isActive = tab.dataset.view === viewName;
+          tab.querySelector('.nav-tab-bg').style.opacity = isActive ? '1' : '0';
+          tab.querySelector('span').classList.toggle('text-white', isActive);
+          tab.querySelector('span').classList.toggle('text-forge-600', !isActive);
+          tab.setAttribute('aria-selected', isActive);
+        });
+        
+        // Update sections
+        viewSections.forEach(section => {
+          const isActive = section.dataset.view === viewName;
+          section.classList.toggle('hidden', !isActive);
+        });
+
+        // Initialize responding view if needed
+        if (viewName === 'responding') {
+          initRespondingView();
+        }
+      }
+      
+      navTabs.forEach(tab => {
+        tab.addEventListener('click', () => switchView(tab.dataset.view));
+      });
+      
+      navigateCards.forEach(card => {
+        card.addEventListener('click', () => switchView(card.dataset.navigate));
+      });
+
+      // ═══════════════════════════════════════════════════════════════════════
+      // RESPONDING VIEW - Steps Data & Logic
+      // ═══════════════════════════════════════════════════════════════════════
+      
+      const STEPS = {
+        isolated: [
+          {
+            id: 'alert-received',
+            title: 'Alert Received',
+            phase: 'Detection',
+            icon: 'bell',
+            description: `
+              <p>Alerts are typically received from <strong>Observe</strong> or <strong>New Relic Synthetic Monitoring</strong>. Please read the entire paging message to know what further actions to take or if you are required to join a Zoom bridge immediately.</p>
+              <p class="mt-3">To learn more about how alerts are received or where they come from, review <a href="#" class="text-sky-600 hover:underline">PagerDuty</a> and your team's <a href="#" class="text-sky-600 hover:underline">Observe dashboards</a>.</p>
+            `,
+            actions: [
+              { label: 'Open PagerDuty', href: '#', variant: 'primary' },
+              { label: 'View Observe', href: '#', variant: 'secondary' }
+            ]
+          },
+          {
+            id: 'review-playbook',
+            title: 'Review Team Playbook',
+            phase: 'Preparation',
+            icon: 'book',
+            description: `
+              <p>Before diving into diagnosis, consult your team's <strong>incident playbook</strong>. Playbooks contain pre-defined runbooks, escalation paths, and known issues that can significantly speed up your response.</p>
+            `,
+            actions: [
+              { label: 'Open Team Playbook', href: '#', variant: 'primary' }
+            ]
+          },
+          {
+            id: 'isolated-incident',
+            title: 'Confirm Isolated Incident',
+            phase: 'Classification',
+            icon: 'target',
+            description: `
+              <p>Verify this is truly an <strong>isolated incident</strong> affecting only your service or component. Check for:</p>
+              <ul class="mt-2 space-y-1 text-forge-600">
+                <li>• No alerts from dependent or upstream services</li>
+                <li>• Impact contained to a single team's domain</li>
+                <li>• No customer-wide or business-line impact reported</li>
+              </ul>
+            `,
+            actions: [
+              { label: 'Switch to Enterprise Path', href: '#', variant: 'secondary', action: 'switch-path' }
+            ]
+          },
+          {
+            id: 'monitor-triage',
+            title: 'Monitor & Triage',
+            phase: 'Investigation',
+            icon: 'search',
+            description: `
+              <p>Actively monitor the situation and begin triaging:</p>
+              <ul class="mt-2 space-y-1 text-forge-600">
+                <li>• Check relevant dashboards for anomalies</li>
+                <li>• Review recent deployments or changes</li>
+                <li>• Examine logs and traces for error patterns</li>
+                <li>• Identify the blast radius and affected users</li>
+              </ul>
+            `,
+            actions: [
+              { label: 'Open Observe', href: '#', variant: 'primary' },
+              { label: 'View Recent Deploys', href: '#', variant: 'secondary' }
+            ]
+          },
+          {
+            id: 'determine-impact',
+            title: 'Determine Impact',
+            phase: 'Assessment',
+            icon: 'gauge',
+            description: `
+              <p>Assess the full impact of the incident using your team's <strong>severity matrix</strong>:</p>
+              <ul class="mt-2 space-y-1 text-forge-600">
+                <li>• How many users are affected?</li>
+                <li>• Is there data loss or corruption risk?</li>
+                <li>• What's the revenue or compliance impact?</li>
+              </ul>
+            `,
+            actions: [
+              { label: 'View Severity Matrix', href: '#', variant: 'primary' }
+            ]
+          },
+          {
+            id: 'notify-stakeholders',
+            title: 'Notify Stakeholders',
+            phase: 'Communication',
+            icon: 'megaphone',
+            description: `
+              <p>Communicate the incident status to relevant stakeholders:</p>
+              <ul class="mt-2 space-y-1 text-forge-600">
+                <li>• Post status update to incident Slack channel</li>
+                <li>• Notify product/engineering leadership if SEV-1/2</li>
+                <li>• Update status page if customer-facing</li>
+              </ul>
+            `,
+            actions: [
+              { label: 'Post to Slack', href: '#', variant: 'primary' },
+              { label: 'Update Status Page', href: '#', variant: 'secondary' }
+            ]
+          },
+          {
+            id: 'resolve-incident',
+            title: 'Resolve Incident',
+            phase: 'Resolution',
+            icon: 'check-circle',
+            description: `
+              <p>Once impact has been mitigated, transition to a stable state:</p>
+              <ul class="mt-2 space-y-1 text-forge-600">
+                <li>• Validate fix with monitoring (no new errors)</li>
+                <li>• Confirm customer-facing behavior is restored</li>
+                <li>• Document any temporary mitigations in place</li>
+              </ul>
+            `,
+            actions: [
+              { label: 'Close Incident', href: '#', variant: 'primary' }
+            ]
+          },
+          {
+            id: 'lessons-learned',
+            title: 'Lessons Learned',
+            phase: 'Retrospective',
+            icon: 'graduation-cap',
+            description: `
+              <p>Schedule a <strong>blameless post-incident review</strong> within 48-72 hours:</p>
+              <ul class="mt-2 space-y-1 text-forge-600">
+                <li>• Capture the complete timeline of events</li>
+                <li>• Identify contributing factors (not blame)</li>
+                <li>• Define action items to prevent recurrence</li>
+              </ul>
+            `,
+            actions: [
+              { label: 'Schedule Review', href: '#', variant: 'primary' },
+              { label: 'View Template', href: '#', variant: 'secondary' }
+            ]
+          }
+        ],
+        enterprise: [
+          {
+            id: 'alert-received',
+            title: 'Alert Received',
+            phase: 'Detection',
+            icon: 'bell',
+            description: `
+              <p>Alerts are typically received from <strong>Observe</strong> or <strong>New Relic</strong>. For enterprise incidents, you may receive multiple correlated alerts.</p>
+              <p class="mt-3">Check if a Zoom bridge has already been opened and join immediately if indicated.</p>
+            `,
+            actions: [
+              { label: 'Open PagerDuty', href: '#', variant: 'primary' },
+              { label: 'Join Zoom Bridge', href: '#', variant: 'secondary' }
+            ]
+          },
+          {
+            id: 'review-playbook',
+            title: 'Review Team Playbook',
+            phase: 'Preparation',
+            icon: 'book',
+            description: `
+              <p>For enterprise incidents, multiple playbooks may be relevant. Identify which teams are potentially involved.</p>
+            `,
+            actions: [
+              { label: 'Open Playbooks Index', href: '#', variant: 'primary' }
+            ]
+          },
+          {
+            id: 'enterprise-incident',
+            title: 'Confirm Enterprise Scope',
+            phase: 'Classification',
+            icon: 'layers',
+            description: `
+              <p>Verify this incident has <strong>enterprise or LOB-wide impact</strong>:</p>
+              <ul class="mt-2 space-y-1 text-forge-600">
+                <li>• Multiple services or teams affected</li>
+                <li>• Cross-functional coordination required</li>
+                <li>• Executive visibility needed</li>
+              </ul>
+            `,
+            actions: [
+              { label: 'Switch to Isolated Path', href: '#', variant: 'secondary', action: 'switch-path' }
+            ]
+          },
+          {
+            id: 'monitor-triage',
+            title: 'Monitor & Triage',
+            phase: 'Investigation',
+            icon: 'search',
+            description: `
+              <p>Coordinate monitoring across affected services:</p>
+              <ul class="mt-2 space-y-1 text-forge-600">
+                <li>• Establish a shared view of dashboards</li>
+                <li>• Identify the root service causing cascade</li>
+                <li>• Track impact across all business lines</li>
+              </ul>
+            `,
+            actions: [
+              { label: 'Open Enterprise Dashboard', href: '#', variant: 'primary' }
+            ]
+          },
+          {
+            id: 'determine-impact',
+            title: 'Determine Impact',
+            phase: 'Assessment',
+            icon: 'gauge',
+            description: `
+              <p>Enterprise impact assessment must consider full scope:</p>
+              <ul class="mt-2 space-y-1 text-forge-600">
+                <li>• Total users affected across all services</li>
+                <li>• Cumulative revenue impact</li>
+                <li>• Regulatory or compliance implications</li>
+              </ul>
+            `,
+            actions: [
+              { label: 'View Severity Matrix', href: '#', variant: 'primary' }
+            ]
+          },
+          {
+            id: 'elect-manager',
+            title: 'Elect LOB Incident Manager',
+            phase: 'Coordination',
+            icon: 'user-check',
+            description: `
+              <p>For enterprise incidents, elect a dedicated <strong>LOB Incident Manager</strong> who will:</p>
+              <ul class="mt-2 space-y-1 text-forge-600">
+                <li>• Coordinate across all involved teams</li>
+                <li>• Own communications to leadership</li>
+                <li>• Make decisions on mitigation strategies</li>
+              </ul>
+            `,
+            actions: [
+              { label: 'View IM Roster', href: '#', variant: 'primary' },
+              { label: 'Assign IM', href: '#', variant: 'secondary' }
+            ]
+          },
+          {
+            id: 'notify-stakeholders',
+            title: 'Notify Stakeholders',
+            phase: 'Communication',
+            icon: 'megaphone',
+            description: `
+              <p>Enterprise incidents require broader communication:</p>
+              <ul class="mt-2 space-y-1 text-forge-600">
+                <li>• Executive stakeholders and leadership</li>
+                <li>• All affected product and engineering teams</li>
+                <li>• Legal/compliance if data or regulatory impact</li>
+              </ul>
+            `,
+            actions: [
+              { label: 'Send Executive Update', href: '#', variant: 'primary' },
+              { label: 'Update Status Page', href: '#', variant: 'secondary' }
+            ]
+          },
+          {
+            id: 'resolve-incident',
+            title: 'Resolve Incident',
+            phase: 'Resolution',
+            icon: 'check-circle',
+            description: `
+              <p>Enterprise resolution requires coordinated confirmation:</p>
+              <ul class="mt-2 space-y-1 text-forge-600">
+                <li>• All affected services confirm stability</li>
+                <li>• Customer-facing behavior fully restored</li>
+                <li>• Incident Manager signs off on resolution</li>
+              </ul>
+            `,
+            actions: [
+              { label: 'Close Incident', href: '#', variant: 'primary' },
+              { label: 'Send All Clear', href: '#', variant: 'secondary' }
+            ]
+          },
+          {
+            id: 'lessons-learned',
+            title: 'Lessons Learned',
+            phase: 'Retrospective',
+            icon: 'graduation-cap',
+            description: `
+              <p>Enterprise post-incident reviews should include all affected teams:</p>
+              <ul class="mt-2 space-y-1 text-forge-600">
+                <li>• Comprehensive cross-team timeline</li>
+                <li>• Systemic contributing factors</li>
+                <li>• Inter-team communication effectiveness</li>
+              </ul>
+            `,
+            actions: [
+              { label: 'Schedule Review', href: '#', variant: 'primary' },
+              { label: 'View Template', href: '#', variant: 'secondary' }
+            ]
+          }
+        ]
+      };
+
+      const ICONS = {
+        bell: '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>',
+        book: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>',
+        target: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
+        search: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>',
+        gauge: '<path d="M12 2v4"/><path d="m16.2 7.8 2.9-2.9"/><path d="M18 12h4"/><path d="m16.2 16.2 2.9 2.9"/><path d="M12 18v4"/><path d="m4.9 19.1 2.9-2.9"/><path d="M2 12h4"/><path d="m4.9 4.9 2.9 2.9"/><circle cx="12" cy="12" r="4"/>',
+        megaphone: '<path d="m3 11 18-5v12L3 13v-2z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>',
+        'check-circle': '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01l-3-3"/>',
+        'graduation-cap': '<path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5"/>',
+        layers: '<path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 12.5-8.58 3.91a2 2 0 0 1-1.66 0L2 12.5"/><path d="m22 17.5-8.58 3.91a2 2 0 0 1-1.66 0L2 17.5"/>',
+        'user-check': '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/>'
+      };
+
+      let currentPath = 'isolated';
+      let currentStepIndex = 0;
+      let respondingInitialized = false;
+
+      function getPathColor(path) {
+        return path === 'isolated' 
+          ? { bg: 'bg-incident-isolated-500', light: 'bg-incident-isolated-100', text: 'text-incident-isolated-700', border: 'border-incident-isolated-300' }
+          : { bg: 'bg-incident-enterprise-500', light: 'bg-incident-enterprise-100', text: 'text-incident-enterprise-700', border: 'border-incident-enterprise-300' };
+      }
+
+      function getIconSvg(iconName) {
+        return `<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[iconName] || ICONS['bell']}</svg>`;
+      }
+
+      function initRespondingView() {
+        if (respondingInitialized) return;
+        respondingInitialized = true;
+        
+        // Get DOM elements
+        const pathBtns = document.querySelectorAll('.path-btn');
+        const pathDescs = document.querySelectorAll('.path-desc');
+        const stepsContainer = document.getElementById('steps-container');
+        const detailPanel = document.getElementById('detail-panel');
+        const progressBar = document.getElementById('progress-bar');
+        const currentStepNum = document.getElementById('current-step-num');
+        const totalStepsNum = document.getElementById('total-steps-num');
+        const btnPrevStep = document.getElementById('btn-prev-step');
+        const btnNextStep = document.getElementById('btn-next-step');
+        const detailIcon = document.getElementById('detail-icon');
+        const detailStepBadge = document.getElementById('detail-step-badge');
+        const detailPhaseBadge = document.getElementById('detail-phase-badge');
+        const detailTitle = document.getElementById('detail-title');
+        const detailContent = document.getElementById('detail-content');
+        const detailActions = document.getElementById('detail-actions');
+        const detailBtnPrev = document.getElementById('detail-btn-prev');
+        const detailBtnNext = document.getElementById('detail-btn-next');
+
+        function renderSteps() {
+          const steps = STEPS[currentPath];
+          const colors = getPathColor(currentPath);
+          
+          stepsContainer.innerHTML = '';
+          
+          steps.forEach((step, index) => {
+            const isActive = index === currentStepIndex;
+            const isPast = index < currentStepIndex;
+            
+            const stepEl = document.createElement('button');
+            stepEl.type = 'button';
+            stepEl.className = `step-node group relative flex flex-col items-center flex-1 max-w-[100px] py-2 rounded-xl transition-all ${isActive ? 'active' : ''}`;
+            stepEl.dataset.stepIndex = index;
+            
+            const circleClasses = isActive 
+              ? `${colors.bg} text-white shadow-lg` 
+              : isPast 
+                ? `${colors.light} ${colors.text}` 
+                : 'bg-forge-100 text-forge-400';
+            
+            stepEl.innerHTML = `
+              <div class="relative">
+                <div class="w-9 h-9 rounded-xl ${circleClasses} flex items-center justify-center transition-all group-hover:scale-105">
+                  ${getIconSvg(step.icon)}
+                </div>
+                ${isActive ? `<div class="absolute -inset-1 rounded-xl ${colors.bg} opacity-20 animate-pulse"></div>` : ''}
+              </div>
+              <span class="mt-1.5 text-[10px] font-medium ${isActive ? 'text-forge-900' : 'text-forge-500'} max-w-[70px] text-center leading-tight">
+                ${step.title}
+              </span>
+              <span class="mt-0.5 text-[9px] ${isActive ? colors.text : 'text-forge-400'}">
+                ${step.phase}
+              </span>
+            `;
+            
+            stepEl.addEventListener('click', () => selectStep(index));
+            stepsContainer.appendChild(stepEl);
+            
+            // if (index < steps.length - 1) {
+            //   const connector = document.createElement('div');
+            //   connector.className = `flex items-center self-start mt-4`;
+            //   connector.innerHTML = `<div class="w-2 h-0.5 ${index < currentStepIndex ? colors.bg : 'bg-forge-200'} transition-colors"></div>`;
+            //   stepsContainer.appendChild(connector);
+            // }
+          });
+
+          totalStepsNum.textContent = steps.length;
+          currentStepNum.textContent = currentStepIndex + 1;
+          
+          const progress = (currentStepIndex / (steps.length - 1)) * 100;
+          progressBar.style.width = `${progress}%`;
+          progressBar.className = `h-full rounded-full transition-all duration-500 ease-out ${colors.bg}`;
+          
+          btnPrevStep.disabled = currentStepIndex === 0;
+          btnNextStep.disabled = currentStepIndex === steps.length - 1;
+        }
+
+        function renderDetailPanel() {
+          const steps = STEPS[currentPath];
+          const step = steps[currentStepIndex];
+          const colors = getPathColor(currentPath);
+          
+          detailIcon.className = `flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-lg ${colors.bg}`;
+          detailIcon.innerHTML = getIconSvg(step.icon);
+          
+          detailStepBadge.textContent = `Step ${currentStepIndex + 1}`;
+          detailStepBadge.className = `inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide ${colors.light} ${colors.text}`;
+          
+          detailPhaseBadge.textContent = step.phase;
+          detailTitle.textContent = step.title;
+          detailContent.innerHTML = step.description;
+          
+          detailActions.innerHTML = '';
+          step.actions.forEach(action => {
+            const btn = document.createElement('a');
+            btn.href = action.href;
+            
+            if (action.action === 'switch-path') {
+              btn.href = 'javascript:void(0)';
+              btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                setPath(currentPath === 'isolated' ? 'enterprise' : 'isolated');
+              });
+            }
+            
+            const baseClasses = 'inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors';
+            btn.className = action.variant === 'primary'
+              ? `${baseClasses} ${colors.bg} text-white hover:opacity-90`
+              : `${baseClasses} ${colors.light} ${colors.text} hover:opacity-80`;
+            
+            btn.innerHTML = `
+              ${action.label}
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+              </svg>
+            `;
+            detailActions.appendChild(btn);
+          });
+          
+          detailBtnPrev.disabled = currentStepIndex === 0;
+          detailBtnNext.disabled = currentStepIndex === steps.length - 1;
+          detailBtnNext.className = `inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors ${colors.bg} hover:opacity-90 disabled:opacity-40`;
+        }
+
+        function updatePathUI() {
+          pathBtns.forEach(btn => {
+            const isActive = btn.dataset.path === currentPath;
+            btn.querySelector('.path-bg').style.opacity = isActive ? '1' : '0';
+          });
+          
+          pathDescs.forEach(desc => {
+            const isActive = desc.dataset.path === currentPath;
+            const pathColors = getPathColor(desc.dataset.path);
+            
+            desc.classList.remove('border-incident-isolated-300', 'bg-incident-isolated-50', 
+                                   'border-incident-enterprise-300', 'bg-incident-enterprise-50',
+                                   'border-forge-200', 'bg-white');
+            
+            if (isActive) {
+              desc.classList.add(pathColors.border, pathColors.light.replace('100', '50'));
+            } else {
+              desc.classList.add('border-forge-200', 'bg-white');
+            }
+          });
+        }
+
+        function setPath(path) {
+          if (path === currentPath) return;
+          currentPath = path;
+          currentStepIndex = 0;
+          
+          updatePathUI();
+          renderSteps();
+          renderDetailPanel();
+          
+          if (!detailPanel.classList.contains('open')) {
+            detailPanel.classList.add('open');
+          }
+        }
+
+        function selectStep(index) {
+          currentStepIndex = index;
+          renderSteps();
+          renderDetailPanel();
+          
+          if (!detailPanel.classList.contains('open')) {
+            detailPanel.classList.add('open');
+          }
+        }
+
+        function navigateStep(direction) {
+          const steps = STEPS[currentPath];
+          const newIndex = currentStepIndex + direction;
+          
+          if (newIndex >= 0 && newIndex < steps.length) {
+            selectStep(newIndex);
+          }
+        }
+
+        // Event listeners
+        pathBtns.forEach(btn => {
+          btn.addEventListener('click', () => setPath(btn.dataset.path));
+        });
+        
+        pathDescs.forEach(desc => {
+          desc.addEventListener('click', () => setPath(desc.dataset.path));
+        });
+        
+        btnPrevStep.addEventListener('click', () => navigateStep(-1));
+        btnNextStep.addEventListener('click', () => navigateStep(1));
+        detailBtnPrev.addEventListener('click', () => navigateStep(-1));
+        detailBtnNext.addEventListener('click', () => navigateStep(1));
+
+        // Initialize
+        updatePathUI();
+        renderSteps();
+        renderDetailPanel();
+        
+        setTimeout(() => {
+          detailPanel.classList.add('open');
+        }, 300);
+      }
+
+      // ═══════════════════════════════════════════════════════════════════════
+      // TOC Scroll Highlighting (Preparing view)
+      // ═══════════════════════════════════════════════════════════════════════
+      
+      const tocItems = document.querySelectorAll('.toc-item');
+      const prepSections = document.querySelectorAll('[id^="prep-"]');
+      
+      function updateTocHighlight() {
+        let current = '';
+        prepSections.forEach(section => {
+          const rect = section.getBoundingClientRect();
+          if (rect.top <= 100) {
+            current = section.id;
+          }
+        });
+        
+        tocItems.forEach(item => {
+          const href = item.getAttribute('href');
+          const isActive = href === `#${current}`;
+          item.classList.toggle('active', isActive);
+        });
+      }
+      
+      window.addEventListener('scroll', updateTocHighlight);
+      
+      // Smooth scroll for TOC links
+      tocItems.forEach(item => {
+        item.addEventListener('click', (e) => {
+          e.preventDefault();
+          const target = document.querySelector(item.getAttribute('href'));
+          if (target) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        });
+      });
+
+    })();
+  </script>
+</body>
+</html>

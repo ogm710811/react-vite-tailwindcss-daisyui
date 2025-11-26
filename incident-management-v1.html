@@ -1,0 +1,1942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>C1S Forge Platform – Incident Management</title>
+  <!-- Tailwind CDN (you'll replace with Tailwind v4 in your build setup) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    /* Optional: subtle pattern background for the flow canvas */
+    .im-flow-bg {
+      background-image: radial-gradient(circle at 1px 1px, rgba(148, 163, 184, 0.28) 1px, transparent 0);
+      background-size: 18px 18px;
+    }
+
+    .im-node {
+      transition: transform 150ms ease, box-shadow 150ms ease,
+      background-color 150ms ease, border-color 150ms ease;
+    }
+
+    .im-node:hover {
+      transform: translateY(-1px);
+    }
+
+    .im-node-active {
+      box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.8);
+    }
+
+    .im-modal-open {
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+<!-- Content wrapper that will sit inside the host shell -->
+<main class="max-w-6xl mx-auto px-6 py-8 lg:px-10 lg:py-10">
+  <!-- Page header + local nav -->
+  <header class="mb-8 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+    <div>
+<!--      <p class="text-xs font-semibold uppercase tracking-widest text-sky-500">-->
+<!--        Incident Management-->
+<!--      </p>-->
+      <h1 class="mt-2 text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
+        Manage, respond, and learn from incidents
+      </h1>
+      <p class="mt-2 max-w-2xl text-sm text-slate-600">
+        Use these tools to prepare for incidents, follow a consistent response flow,
+        and align on shared severity definitions across the C1S ecosystem.
+      </p>
+    </div>
+
+    <!-- Local nav tabs -->
+    <nav
+            class="inline-flex rounded-full border border-slate-200 bg-white p-1 text-sm font-medium shadow-sm"
+            aria-label="Incident Management sections"
+    >
+      <button
+              type="button"
+              class="im-nav-btn rounded-full px-4 py-1.5 text-slate-700 transition-colors data-[active=true]:bg-slate-900 data-[active=true]:text-white"
+              data-view-target="overview"
+              data-active="true"
+      >
+        Overview
+      </button>
+      <button
+              type="button"
+              class="im-nav-btn rounded-full px-4 py-1.5 text-slate-600 transition-colors data-[active=true]:bg-slate-900 data-[active=true]:text-white"
+              data-view-target="preparing"
+      >
+        Preparing
+      </button>
+      <button
+              type="button"
+              class="im-nav-btn rounded-full px-4 py-1.5 text-slate-600 transition-colors data-[active=true]:bg-slate-900 data-[active=true]:text-white"
+              data-view-target="responding"
+      >
+        Responding
+      </button>
+      <button
+              type="button"
+              class="im-nav-btn rounded-full px-4 py-1.5 text-slate-600 transition-colors data-[active=true]:bg-slate-900 data-[active=true]:text-white"
+              data-view-target="severity"
+      >
+        Severity Matrices
+      </button>
+    </nav>
+  </header>
+
+  <!-- Views -->
+  <!-- Overview -->
+  <section id="im-view-overview" class="space-y-6" data-view="overview">
+    <p class="text-sm text-slate-600">
+      Start from the area that best matches your goal. You can always come back to this
+      overview using the local navigation above.
+    </p>
+
+    <div
+            class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3"
+            aria-label="Incident Management entry points"
+    >
+      <!-- Preparing card -->
+      <article
+              class="group flex cursor-pointer flex-col rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-sky-400 hover:shadow-md"
+              data-go-to-view="preparing"
+      >
+        <div
+                class="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-sky-50 text-sky-500"
+        >
+          <!-- icon: checklist -->
+          <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-5 w-5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+          >
+            <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M4 6h7m-7 6h7m-7 6h7M16 5l2 2 3-3M16 11l2 2 3-3M16 17l2 2 3-3"
+            />
+          </svg>
+        </div>
+        <h2 class="mt-4 text-base font-semibold text-slate-900">
+          Preparing for an Incident
+        </h2>
+        <p class="mt-2 text-sm text-slate-600">
+          Make sure teams, tools, and stakeholders are ready before an incident happens:
+          PagerDuty, playbooks, ownership, and dependencies.
+        </p>
+        <div class="mt-4 flex items-center text-sm font-medium text-sky-600">
+          Open preparing guide
+          <span class="ml-1 transition-transform group-hover:translate-x-0.5">
+                &rarr;
+              </span>
+        </div>
+      </article>
+
+      <!-- Responding card -->
+      <article
+              class="group flex cursor-pointer flex-col rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-sky-400 hover:shadow-md"
+              data-go-to-view="responding"
+      >
+        <div
+                class="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600"
+        >
+          <!-- icon: flow chart -->
+          <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-5 w-5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+          >
+            <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M7 4h10v4H7zM4 16h7v4H4zM13 16h7v4h-7zM12 8v3M8 16v-3M16 16v-3"
+            />
+          </svg>
+        </div>
+        <h2 class="mt-4 text-base font-semibold text-slate-900">
+          Responding to an Incident
+        </h2>
+        <p class="mt-2 text-sm text-slate-600">
+          Follow an interactive flow chart from alert detection through triage, impact
+          assessment, communication, and resolution.
+        </p>
+        <div class="mt-4 flex items-center text-sm font-medium text-emerald-600">
+          Open response flow
+          <span class="ml-1 transition-transform group-hover:translate-x-0.5">
+                &rarr;
+              </span>
+        </div>
+      </article>
+
+      <!-- Severity card -->
+      <article
+              class="group flex cursor-pointer flex-col rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-sky-400 hover:shadow-md"
+              data-go-to-view="severity"
+      >
+        <div
+                class="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-amber-50 text-amber-600"
+        >
+          <!-- icon: matrix / grid -->
+          <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-5 w-5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+          >
+            <rect x="4" y="4" width="7" height="7" rx="1.5" />
+            <rect x="13" y="4" width="7" height="7" rx="1.5" />
+            <rect x="4" y="13" width="7" height="7" rx="1.5" />
+            <rect x="13" y="13" width="7" height="7" rx="1.5" />
+          </svg>
+        </div>
+        <h2 class="mt-4 text-base font-semibold text-slate-900">
+          Severity Matrices
+        </h2>
+        <p class="mt-2 text-sm text-slate-600">
+          Align on a shared definition of impact and urgency so teams classify incidents
+          consistently across C1S.
+        </p>
+        <div class="mt-4 flex items-center text-sm font-medium text-amber-600">
+          View severity guidance
+          <span class="ml-1 transition-transform group-hover:translate-x-0.5">
+                &rarr;
+              </span>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- Preparing for an Incident -->
+  <section
+          id="im-view-preparing"
+          class="hidden space-y-8"
+          data-view="preparing"
+          aria-labelledby="im-preparing-title"
+  >
+    <header class="space-y-2">
+      <h2 id="im-preparing-title" class="text-xl font-semibold text-slate-900">
+        Preparing for an Incident
+      </h2>
+      <p class="text-sm text-slate-600">
+        The best incident response starts before the first page. Use this checklist to
+        ensure your teams, on-call rotations, and documentation are ready.
+      </p>
+    </header>
+
+    <section
+            aria-label="Preparing for an incident quick links"
+            class="flex flex-wrap gap-2 rounded-xl bg-white p-4 shadow-sm border border-slate-200"
+    >
+          <span class="text-xs font-semibold tracking-wide text-slate-500 uppercase">
+            Quick links
+          </span>
+      <div class="mt-2 flex flex-wrap gap-2 text-sm">
+        <a
+                href="#prep-pagerduty-access"
+                class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-slate-700 hover:bg-slate-200"
+        >PagerDuty Access</a
+        >
+        <a
+                href="#prep-pagerduty-teams"
+                class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-slate-700 hover:bg-slate-200"
+        >PagerDuty Teams</a
+        >
+        <a
+                href="#prep-change-mgmt"
+                class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-slate-700 hover:bg-slate-200"
+        >Change Management / Assignment Groups</a
+        >
+        <a
+                href="#prep-playbooks"
+                class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-slate-700 hover:bg-slate-200"
+        >Playbooks</a
+        >
+        <a
+                href="#prep-severity"
+                class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-slate-700 hover:bg-slate-200"
+        >Severity Matrices</a
+        >
+        <a
+                href="#prep-dependencies"
+                class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-slate-700 hover:bg-slate-200"
+        >Identifying Dependencies</a
+        >
+        <a
+                href="#prep-stakeholders"
+                class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-slate-700 hover:bg-slate-200"
+        >Stakeholders</a
+        >
+      </div>
+    </section>
+
+    <div class="space-y-10">
+      <!-- 1. PagerDuty Access -->
+      <section
+              id="prep-pagerduty-access"
+              class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+      >
+        <h3 class="text-base font-semibold text-slate-900">1. PagerDuty Access</h3>
+        <p class="mt-2 text-sm text-slate-600">
+          Confirm that everyone who may need to respond to incidents has access to the
+          appropriate PagerDuty account, escalation policies, and notification methods
+          (SMS, phone, email, and mobile app). Include backup responders for vacations
+          and off-boarding.
+        </p>
+      </section>
+
+      <!-- 2. PagerDuty Teams -->
+      <section
+              id="prep-pagerduty-teams"
+              class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+      >
+        <h3 class="text-base font-semibold text-slate-900">2. PagerDuty Teams</h3>
+        <p class="mt-2 text-sm text-slate-600">
+          Map your services and components to PagerDuty teams. Ensure on-call rotations
+          are defined, escalation paths are healthy, and responsibilities are documented
+          so incidents always have a clear owner.
+        </p>
+      </section>
+
+      <!-- 3. Change Management / Assignment Groups -->
+      <section
+              id="prep-change-mgmt"
+              class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+      >
+        <h3 class="text-base font-semibold text-slate-900">
+          3. Change Management / Assignment Groups
+        </h3>
+        <p class="mt-2 text-sm text-slate-600">
+          Keep your change management system in sync with your incident responders.
+          Assignment groups should mirror how work is structured across applications,
+          infrastructure, and shared platforms so incidents can be quickly routed.
+        </p>
+      </section>
+
+      <!-- 4. Playbooks -->
+      <section
+              id="prep-playbooks"
+              class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+      >
+        <h3 class="text-base font-semibold text-slate-900">4. Playbooks</h3>
+        <p class="mt-2 text-sm text-slate-600">
+          Maintain lightweight, version-controlled runbooks for the most common failure
+          modes. For each one capture: symptoms, quick checks, decision points, fallback
+          options, and how to engage additional teams.
+        </p>
+      </section>
+
+      <!-- 5. Severity Matrices -->
+      <section
+              id="prep-severity"
+              class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+      >
+        <h3 class="text-base font-semibold text-slate-900">5. Severity Matrices</h3>
+        <p class="mt-2 text-sm text-slate-600">
+          Align your team’s definitions of Sev1–Sev4 with the C1S standard severity
+          matrix. This keeps executive communication, regulatory reporting, and post
+          incident reviews consistent.
+        </p>
+      </section>
+
+      <!-- 6. Identifying Dependencies -->
+      <section
+              id="prep-dependencies"
+              class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+      >
+        <h3 class="text-base font-semibold text-slate-900">6. Identifying Dependencies</h3>
+        <p class="mt-2 text-sm text-slate-600">
+          Document upstream and downstream dependencies: core services, data pipelines,
+          third-party vendors, and customer-facing entry points. This accelerates triage
+          and ensures you invite the right teams into the incident bridge.
+        </p>
+      </section>
+
+      <!-- 7. Stakeholders -->
+      <section
+              id="prep-stakeholders"
+              class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+      >
+        <h3 class="text-base font-semibold text-slate-900">7. Stakeholders</h3>
+        <p class="mt-2 text-sm text-slate-600">
+          Identify key stakeholders for your product or platform: business partners,
+          customer support, compliance, and leadership. Capture preferred communication
+          channels so you can keep them informed during and after an incident.
+        </p>
+      </section>
+    </div>
+  </section>
+
+  <!-- Responding to an Incident -->
+<!--  <section-->
+<!--          id="im-view-responding"-->
+<!--          class="hidden space-y-8"-->
+<!--          data-view="responding"-->
+<!--          aria-labelledby="im-responding-title"-->
+<!--  >-->
+<!--    <header class="space-y-2">-->
+<!--      <h2 id="im-responding-title" class="text-xl font-semibold text-slate-900">-->
+<!--        Responding to an Incident-->
+<!--      </h2>-->
+<!--      <p class="text-sm text-slate-600">-->
+<!--        Use this interactive flow to move from the initial alert through triage, impact-->
+<!--        assessment, communication, and resolution. Click any step to see guidance and-->
+<!--        navigate through the response.-->
+<!--      </p>-->
+<!--    </header>-->
+
+<!--    &lt;!&ndash; Flow chart canvas &ndash;&gt;-->
+<!--    <section-->
+<!--            class="rounded-2xl border border-slate-800 bg-slate-950/95 im-flow-bg p-4 sm:p-6 shadow-lg"-->
+<!--            aria-label="Incident response flow chart"-->
+<!--    >-->
+<!--      <div class="overflow-x-auto">-->
+<!--        <div-->
+<!--                class="min-w-[720px] space-y-8 px-4 py-4 text-sm text-slate-50 md:px-6 lg:px-10"-->
+<!--        >-->
+<!--          &lt;!&ndash; Shared top steps &ndash;&gt;-->
+<!--          <div class="flex flex-col items-center gap-8">-->
+<!--            <button-->
+<!--                    type="button"-->
+<!--                    class="im-node rounded-xl border border-slate-400/60 bg-slate-900/70 px-6 py-3 text-sm font-medium shadow-sm hover:bg-slate-800/90 focus:outline-none focus:ring-2 focus:ring-sky-400"-->
+<!--                    data-node-id="alert-received"-->
+<!--            >-->
+<!--              Alert Received-->
+<!--            </button>-->
+
+<!--            <div class="h-6 w-px bg-slate-500/70"></div>-->
+
+<!--            <button-->
+<!--                    type="button"-->
+<!--                    class="im-node rounded-xl border border-slate-400/60 bg-slate-900/70 px-6 py-3 text-sm font-medium shadow-sm hover:bg-slate-800/90 focus:outline-none focus:ring-2 focus:ring-sky-400"-->
+<!--                    data-node-id="review-team-playbook"-->
+<!--            >-->
+<!--              Review Team Playbook-->
+<!--            </button>-->
+
+<!--            &lt;!&ndash; branch connector &ndash;&gt;-->
+<!--            <div class="mt-4 flex w-full max-w-xl items-center justify-center gap-10">-->
+<!--              <div class="h-px flex-1 bg-slate-600/70"></div>-->
+<!--              <div class="h-px flex-1 bg-slate-600/70"></div>-->
+<!--            </div>-->
+<!--          </div>-->
+
+<!--          &lt;!&ndash; Branches row &ndash;&gt;-->
+<!--          <div-->
+<!--                  class="grid gap-10 md:grid-cols-2 md:items-start md:justify-items-center"-->
+<!--          >-->
+<!--            &lt;!&ndash; Isolated Incident branch &ndash;&gt;-->
+<!--            <div class="flex flex-col items-center gap-4">-->
+<!--              <div class="relative flex items-center gap-3">-->
+<!--                <button-->
+<!--                        type="button"-->
+<!--                        class="im-node rounded-xl border border-emerald-300/70 bg-slate-900/80 px-5 py-3 text-sm font-medium text-emerald-50 shadow-sm hover:bg-slate-800/90 focus:outline-none focus:ring-2 focus:ring-emerald-400"-->
+<!--                        data-node-id="isolated-incident"-->
+<!--                >-->
+<!--                  Isolated Incident-->
+<!--                </button>-->
+<!--                <button-->
+<!--                        type="button"-->
+<!--                        class="im-branch-toggle inline-flex h-7 w-7 items-center justify-center rounded-full border border-slate-400/70 bg-slate-900/90 text-xs font-semibold text-slate-100 shadow-sm hover:bg-slate-800"-->
+<!--                        aria-label="Toggle Isolated Incident steps"-->
+<!--                        data-branch="isolated"-->
+<!--                >-->
+<!--                  −-->
+<!--                </button>-->
+<!--              </div>-->
+
+<!--              <div-->
+<!--                      class="im-branch-steps-isolated flex flex-col items-center gap-4"-->
+<!--                      data-branch-panel="isolated"-->
+<!--              >-->
+<!--                <div class="h-6 w-px bg-slate-600/70"></div>-->
+
+<!--                <button-->
+<!--                        type="button"-->
+<!--                        class="im-node rounded-xl border border-emerald-300/70 bg-slate-900/80 px-5 py-3 text-sm font-medium text-emerald-50 shadow-sm hover:bg-slate-800/90 focus:outline-none focus:ring-2 focus:ring-emerald-400"-->
+<!--                        data-node-id="isolated-monitor-triage"-->
+<!--                >-->
+<!--                  Monitor &amp; Triage-->
+<!--                </button>-->
+
+<!--                <div class="h-6 w-px bg-slate-600/70"></div>-->
+
+<!--                <button-->
+<!--                        type="button"-->
+<!--                        class="im-node rounded-xl border border-emerald-300/70 bg-slate-900/80 px-5 py-3 text-sm font-medium text-emerald-50 shadow-sm hover:bg-slate-800/90 focus:outline-none focus:ring-2 focus:ring-emerald-400"-->
+<!--                        data-node-id="isolated-determine-impact"-->
+<!--                >-->
+<!--                  Determine Impact-->
+<!--                </button>-->
+
+<!--                <div class="h-6 w-px bg-slate-600/70"></div>-->
+
+<!--                <button-->
+<!--                        type="button"-->
+<!--                        class="im-node rounded-xl border border-emerald-300/70 bg-slate-900/80 px-5 py-3 text-sm font-medium text-emerald-50 shadow-sm hover:bg-slate-800/90 focus:outline-none focus:ring-2 focus:ring-emerald-400"-->
+<!--                        data-node-id="isolated-notify-stakeholders"-->
+<!--                >-->
+<!--                  Notify Stakeholders-->
+<!--                </button>-->
+<!--              </div>-->
+<!--            </div>-->
+
+<!--            &lt;!&ndash; LOB / Enterprise branch &ndash;&gt;-->
+<!--            <div class="flex flex-col items-center gap-4">-->
+<!--              <div class="relative flex items-center gap-3">-->
+<!--                <button-->
+<!--                        type="button"-->
+<!--                        class="im-node rounded-xl border border-sky-300/70 bg-slate-900/80 px-5 py-3 text-sm font-medium text-sky-50 shadow-sm hover:bg-slate-800/90 focus:outline-none focus:ring-2 focus:ring-sky-400"-->
+<!--                        data-node-id="lob-incident"-->
+<!--                >-->
+<!--                  LOB / Enterprise Wide Incident-->
+<!--                </button>-->
+<!--                <button-->
+<!--                        type="button"-->
+<!--                        class="im-branch-toggle inline-flex h-7 w-7 items-center justify-center rounded-full border border-slate-400/70 bg-slate-900/90 text-xs font-semibold text-slate-100 shadow-sm hover:bg-slate-800"-->
+<!--                        aria-label="Toggle LOB / Enterprise Wide steps"-->
+<!--                        data-branch="lob"-->
+<!--                >-->
+<!--                  −-->
+<!--                </button>-->
+<!--              </div>-->
+
+<!--              <div-->
+<!--                      class="im-branch-steps-lob flex flex-col items-center gap-4"-->
+<!--                      data-branch-panel="lob"-->
+<!--              >-->
+<!--                <div class="h-6 w-px bg-slate-600/70"></div>-->
+
+<!--                <button-->
+<!--                        type="button"-->
+<!--                        class="im-node rounded-xl border border-sky-300/70 bg-slate-900/80 px-5 py-3 text-sm font-medium text-sky-50 shadow-sm hover:bg-slate-800/90 focus:outline-none focus:ring-2 focus:ring-sky-400"-->
+<!--                        data-node-id="lob-monitor-triage"-->
+<!--                >-->
+<!--                  Monitor &amp; Triage-->
+<!--                </button>-->
+
+<!--                <div class="h-6 w-px bg-slate-600/70"></div>-->
+
+<!--                <button-->
+<!--                        type="button"-->
+<!--                        class="im-node rounded-xl border border-sky-300/70 bg-slate-900/80 px-5 py-3 text-sm font-medium text-sky-50 shadow-sm hover:bg-slate-800/90 focus:outline-none focus:ring-2 focus:ring-sky-400"-->
+<!--                        data-node-id="lob-determine-impact"-->
+<!--                >-->
+<!--                  Determine Impact-->
+<!--                </button>-->
+
+<!--                <div class="h-6 w-px bg-slate-600/70"></div>-->
+
+<!--                <div class="flex flex-col items-center gap-4">-->
+<!--                  <div class="flex items-center gap-6">-->
+<!--                    <button-->
+<!--                            type="button"-->
+<!--                            class="im-node rounded-xl border border-sky-300/70 bg-slate-900/80 px-5 py-3 text-sm font-medium text-sky-50 shadow-sm hover:bg-slate-800/90 focus:outline-none focus:ring-2 focus:ring-sky-400"-->
+<!--                            data-node-id="lob-elect-manager"-->
+<!--                    >-->
+<!--                      Elect LOB Incident Manager-->
+<!--                    </button>-->
+<!--                  </div>-->
+
+<!--                  <div class="h-6 w-px bg-slate-600/70"></div>-->
+
+<!--                  <button-->
+<!--                          type="button"-->
+<!--                          class="im-node rounded-xl border border-sky-300/70 bg-slate-900/80 px-5 py-3 text-sm font-medium text-sky-50 shadow-sm hover:bg-slate-800/90 focus:outline-none focus:ring-2 focus:ring-sky-400"-->
+<!--                          data-node-id="lob-notify-stakeholders"-->
+<!--                  >-->
+<!--                    Notify Stakeholders-->
+<!--                  </button>-->
+<!--                </div>-->
+<!--              </div>-->
+<!--            </div>-->
+<!--          </div>-->
+
+<!--          &lt;!&ndash; Converging to shared steps &ndash;&gt;-->
+<!--          <div class="flex flex-col items-center gap-4 pt-2">-->
+<!--            <div class="flex w-full max-w-xl items-center justify-center gap-10">-->
+<!--              <div class="h-px flex-1 bg-slate-600/70"></div>-->
+<!--              <div class="h-px flex-1 bg-slate-600/70"></div>-->
+<!--            </div>-->
+
+<!--            <button-->
+<!--                    type="button"-->
+<!--                    class="im-node rounded-xl border border-slate-300/80 bg-slate-900/80 px-6 py-3 text-sm font-medium text-slate-50 shadow-sm hover:bg-slate-800/90 focus:outline-none focus:ring-2 focus:ring-sky-400"-->
+<!--                    data-node-id="resolve-incident"-->
+<!--            >-->
+<!--              Resolve Incident-->
+<!--            </button>-->
+
+<!--            <div class="h-6 w-px bg-slate-600/70"></div>-->
+
+<!--            <button-->
+<!--                    type="button"-->
+<!--                    class="im-node rounded-xl border border-slate-300/80 bg-slate-900/80 px-6 py-3 text-sm font-medium text-slate-50 shadow-sm hover:bg-slate-800/90 focus:outline-none focus:ring-2 focus:ring-sky-400"-->
+<!--                    data-node-id="lessons-learned"-->
+<!--            >-->
+<!--              Lessons Learned-->
+<!--            </button>-->
+<!--          </div>-->
+<!--        </div>-->
+<!--      </div>-->
+
+<!--      <p class="mt-4 text-xs text-slate-400">-->
+<!--        Note: Alert Received and Review Team Playbook are always visible. The two-->
+<!--        pathways for isolated and enterprise-wide incidents can be collapsed for easier-->
+<!--        viewing, but they share the same resolution and lessons learned stages.-->
+<!--      </p>-->
+<!--    </section>-->
+<!--  </section>-->
+
+  <!-- Responding to an Incident -->
+<!--  <section-->
+<!--          id="im-view-responding"-->
+<!--          class="hidden space-y-8"-->
+<!--          data-view="responding"-->
+<!--          aria-labelledby="im-responding-title"-->
+<!--  >-->
+<!--    <header class="space-y-2">-->
+<!--      <h2 id="im-responding-title" class="text-xl font-semibold text-slate-900">-->
+<!--        Responding to an Incident-->
+<!--      </h2>-->
+<!--      <p class="text-sm text-slate-600">-->
+<!--        Choose the incident path and follow the steps from the initial alert through-->
+<!--        triage, impact assessment, communication, and resolution. Click any step in the-->
+<!--        diagram or stepper to see guidance.-->
+<!--      </p>-->
+<!--    </header>-->
+
+<!--    &lt;!&ndash; Path selector + diagram &ndash;&gt;-->
+<!--    <section-->
+<!--            class="space-y-5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm"-->
+<!--            aria-label="Incident response paths"-->
+<!--    >-->
+<!--      &lt;!&ndash; Path switcher &ndash;&gt;-->
+<!--      <div-->
+<!--              class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-4"-->
+<!--      >-->
+<!--        <div class="space-y-1">-->
+<!--          <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">-->
+<!--            Response paths-->
+<!--          </p>-->
+<!--          <p class="text-xs text-slate-500">-->
+<!--            Focus on a single path at a time. Shared steps are highlighted in both-->
+<!--            paths.-->
+<!--          </p>-->
+<!--        </div>-->
+
+<!--        <div-->
+<!--                class="inline-flex rounded-full bg-slate-100 p-1 text-xs font-medium sm:text-sm"-->
+<!--                role="tablist"-->
+<!--                aria-label="Incident response paths"-->
+<!--        >-->
+<!--          <button-->
+<!--                  type="button"-->
+<!--                  class="im-path-btn rounded-full px-4 py-1.5 text-slate-900 shadow-sm bg-white"-->
+<!--                  data-path="isolated"-->
+<!--                  role="tab"-->
+<!--                  aria-selected="true"-->
+<!--          >-->
+<!--            Isolated Incident path-->
+<!--          </button>-->
+<!--          <button-->
+<!--                  type="button"-->
+<!--                  class="im-path-btn rounded-full px-4 py-1.5 text-slate-600"-->
+<!--                  data-path="lob"-->
+<!--                  role="tab"-->
+<!--                  aria-selected="false"-->
+<!--          >-->
+<!--            LOB / Enterprise path-->
+<!--          </button>-->
+<!--        </div>-->
+<!--      </div>-->
+
+<!--      &lt;!&ndash; GitHub-style branching diagram (light theme) &ndash;&gt;-->
+<!--      <div class="relative overflow-x-auto">-->
+<!--        <div-->
+<!--                class="min-w-[780px] grid gap-10 sm:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,1fr)] items-start"-->
+<!--        >-->
+<!--          &lt;!&ndash; Column 1: shared steps &ndash;&gt;-->
+<!--          <div class="relative flex flex-col items-center gap-5">-->
+<!--            &lt;!&ndash; vertical spine &ndash;&gt;-->
+<!--            <div-->
+<!--                    class="pointer-events-none absolute left-1/2 top-4 bottom-4 -z-10 w-px bg-slate-200"-->
+<!--            ></div>-->
+
+<!--            <button-->
+<!--                    type="button"-->
+<!--                    class="im-node rounded-lg border border-slate-300 bg-slate-50 px-4 py-2.5 text-xs sm:text-sm font-medium text-slate-900 shadow-sm hover:bg-white focus:outline-none focus:ring-2 focus:ring-sky-400"-->
+<!--                    data-node-id="alert-received"-->
+<!--                    data-node-path="common"-->
+<!--            >-->
+<!--              Alert Received-->
+<!--            </button>-->
+
+<!--            <button-->
+<!--                    type="button"-->
+<!--                    class="im-node rounded-lg border border-slate-300 bg-slate-50 px-4 py-2.5 text-xs sm:text-sm font-medium text-slate-900 shadow-sm hover:bg-white focus:outline-none focus:ring-2 focus:ring-sky-400"-->
+<!--                    data-node-id="review-team-playbook"-->
+<!--                    data-node-path="common"-->
+<!--            >-->
+<!--              Review Team Playbook-->
+<!--            </button>-->
+
+<!--            &lt;!&ndash; branch connector: horizontal lines out to each lane &ndash;&gt;-->
+<!--            <div class="mt-1 flex w-full items-center justify-center gap-6">-->
+<!--              <div class="h-px flex-1 bg-slate-200"></div>-->
+<!--              <div class="h-px flex-1 bg-slate-200"></div>-->
+<!--            </div>-->
+<!--          </div>-->
+
+<!--          &lt;!&ndash; Column 2: Isolated path &ndash;&gt;-->
+<!--          <div class="relative flex flex-col items-center gap-5">-->
+<!--            &lt;!&ndash; vertical lane line &ndash;&gt;-->
+<!--            <div-->
+<!--                    class="pointer-events-none absolute left-1/2 top-4 bottom-4 -z-10 w-px bg-emerald-100"-->
+<!--            ></div>-->
+
+<!--            <button-->
+<!--                    type="button"-->
+<!--                    class="im-node rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-xs sm:text-sm font-medium text-emerald-900 shadow-sm hover:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-400"-->
+<!--                    data-node-id="isolated-incident"-->
+<!--                    data-node-path="isolated"-->
+<!--            >-->
+<!--              Isolated Incident-->
+<!--            </button>-->
+
+<!--            <button-->
+<!--                    type="button"-->
+<!--                    class="im-node rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-xs sm:text-sm font-medium text-emerald-900 shadow-sm hover:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-400"-->
+<!--                    data-node-id="isolated-monitor-triage"-->
+<!--                    data-node-path="isolated"-->
+<!--            >-->
+<!--              Monitor &amp; Triage-->
+<!--            </button>-->
+
+<!--            <button-->
+<!--                    type="button"-->
+<!--                    class="im-node rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-xs sm:text-sm font-medium text-emerald-900 shadow-sm hover:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-400"-->
+<!--                    data-node-id="isolated-determine-impact"-->
+<!--                    data-node-path="isolated"-->
+<!--            >-->
+<!--              Determine Impact-->
+<!--            </button>-->
+
+<!--            <button-->
+<!--                    type="button"-->
+<!--                    class="im-node rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-xs sm:text-sm font-medium text-emerald-900 shadow-sm hover:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-400"-->
+<!--                    data-node-id="isolated-notify-stakeholders"-->
+<!--                    data-node-path="isolated"-->
+<!--            >-->
+<!--              Notify Stakeholders-->
+<!--            </button>-->
+
+<!--            &lt;!&ndash; convergence down to shared steps &ndash;&gt;-->
+<!--            <div class="mt-1 h-px w-full bg-slate-200"></div>-->
+<!--          </div>-->
+
+<!--          &lt;!&ndash; Column 3: LOB / Enterprise path &ndash;&gt;-->
+<!--          <div class="relative flex flex-col items-center gap-5">-->
+<!--            &lt;!&ndash; vertical lane line &ndash;&gt;-->
+<!--            <div-->
+<!--                    class="pointer-events-none absolute left-1/2 top-4 bottom-4 -z-10 w-px bg-sky-100"-->
+<!--            ></div>-->
+
+<!--            <button-->
+<!--                    type="button"-->
+<!--                    class="im-node rounded-lg border border-sky-200 bg-sky-50 px-4 py-2.5 text-xs sm:text-sm font-medium text-sky-900 shadow-sm hover:bg-white focus:outline-none focus:ring-2 focus:ring-sky-400"-->
+<!--                    data-node-id="lob-incident"-->
+<!--                    data-node-path="lob"-->
+<!--            >-->
+<!--              LOB / Enterprise Wide Incident-->
+<!--            </button>-->
+
+<!--            <button-->
+<!--                    type="button"-->
+<!--                    class="im-node rounded-lg border border-sky-200 bg-sky-50 px-4 py-2.5 text-xs sm:text-sm font-medium text-sky-900 shadow-sm hover:bg-white focus:outline-none focus:ring-2 focus:ring-sky-400"-->
+<!--                    data-node-id="lob-monitor-triage"-->
+<!--                    data-node-path="lob"-->
+<!--            >-->
+<!--              Monitor &amp; Triage-->
+<!--            </button>-->
+
+<!--            <button-->
+<!--                    type="button"-->
+<!--                    class="im-node rounded-lg border border-sky-200 bg-sky-50 px-4 py-2.5 text-xs sm:text-sm font-medium text-sky-900 shadow-sm hover:bg-white focus:outline-none focus:ring-2 focus:ring-sky-400"-->
+<!--                    data-node-id="lob-determine-impact"-->
+<!--                    data-node-path="lob"-->
+<!--            >-->
+<!--              Determine Impact-->
+<!--            </button>-->
+
+<!--            <button-->
+<!--                    type="button"-->
+<!--                    class="im-node rounded-lg border border-sky-200 bg-sky-50 px-4 py-2.5 text-xs sm:text-sm font-medium text-sky-900 shadow-sm hover:bg-white focus:outline-none focus:ring-2 focus:ring-sky-400"-->
+<!--                    data-node-id="lob-elect-manager"-->
+<!--                    data-node-path="lob"-->
+<!--            >-->
+<!--              Elect LOB Incident Manager-->
+<!--            </button>-->
+
+<!--            <button-->
+<!--                    type="button"-->
+<!--                    class="im-node rounded-lg border border-sky-200 bg-sky-50 px-4 py-2.5 text-xs sm:text-sm font-medium text-sky-900 shadow-sm hover:bg-white focus:outline-none focus:ring-2 focus:ring-sky-400"-->
+<!--                    data-node-id="lob-notify-stakeholders"-->
+<!--                    data-node-path="lob"-->
+<!--            >-->
+<!--              Notify Stakeholders-->
+<!--            </button>-->
+
+<!--            &lt;!&ndash; convergence down to shared steps &ndash;&gt;-->
+<!--            <div class="mt-1 h-px w-full bg-slate-200"></div>-->
+<!--          </div>-->
+<!--        </div>-->
+<!--      </div>-->
+
+<!--      &lt;!&ndash; Converged shared tail steps &ndash;&gt;-->
+<!--      <div class="mt-3 flex flex-col items-center gap-4">-->
+<!--        <div class="flex w-full max-w-md items-center justify-center gap-6">-->
+<!--          <div class="h-px flex-1 bg-slate-200"></div>-->
+<!--          <div class="h-px flex-1 bg-slate-200"></div>-->
+<!--        </div>-->
+
+<!--        <button-->
+<!--                type="button"-->
+<!--                class="im-node rounded-lg border border-slate-300 bg-slate-50 px-5 py-2.5 text-xs sm:text-sm font-medium text-slate-900 shadow-sm hover:bg-white focus:outline-none focus:ring-2 focus:ring-sky-400"-->
+<!--                data-node-id="resolve-incident"-->
+<!--                data-node-path="common"-->
+<!--        >-->
+<!--          Resolve Incident-->
+<!--        </button>-->
+
+<!--        <button-->
+<!--                type="button"-->
+<!--                class="im-node rounded-lg border border-slate-300 bg-slate-50 px-5 py-2.5 text-xs sm:text-sm font-medium text-slate-900 shadow-sm hover:bg-white focus:outline-none focus:ring-2 focus:ring-sky-400"-->
+<!--                data-node-id="lessons-learned"-->
+<!--                data-node-path="common"-->
+<!--        >-->
+<!--          Lessons Learned-->
+<!--        </button>-->
+<!--      </div>-->
+<!--    </section>-->
+
+<!--    &lt;!&ndash; Stepper for active path &ndash;&gt;-->
+<!--    <section-->
+<!--            class="space-y-3 rounded-xl border border-slate-200 bg-white p-5 shadow-sm"-->
+<!--            aria-label="Incident response stepper"-->
+<!--    >-->
+<!--      <div class="flex items-center justify-between gap-3">-->
+<!--        <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">-->
+<!--          Step-by-step-->
+<!--        </p>-->
+<!--        <p-->
+<!--                id="im-stepper-path-label"-->
+<!--                class="text-xs font-medium text-slate-700"-->
+<!--        >-->
+<!--          Isolated Incident path-->
+<!--        </p>-->
+<!--      </div>-->
+
+<!--      <ol-->
+<!--              id="im-stepper-list"-->
+<!--              class="flex gap-3 overflow-x-auto text-xs sm:text-sm"-->
+<!--      >-->
+<!--        &lt;!&ndash; populated by JS &ndash;&gt;-->
+<!--      </ol>-->
+
+<!--      <p class="text-[11px] text-slate-500">-->
+<!--        Tip: you can click a step in either the diagram or the stepper to open the-->
+<!--        detailed guidance. Use the modal’s Next/Previous buttons to move through the-->
+<!--        active path.-->
+<!--      </p>-->
+<!--    </section>-->
+<!--  </section>-->
+
+  <!-- Responding to an Incident -->
+  <section
+          id="im-view-responding"
+          class="hidden space-y-8"
+          data-view="responding"
+          aria-labelledby="im-responding-title"
+  >
+    <header class="space-y-2">
+      <h2 id="im-responding-title" class="text-xl font-semibold text-slate-900">
+        Responding to an Incident
+      </h2>
+      <p class="text-sm text-slate-600">
+        Follow a clear path from the first alert to resolution. Use the branching
+        diagram to understand how the Isolated and LOB / Enterprise paths diverge,
+        then use the stepper to move through each step with detailed guidance.
+      </p>
+    </header>
+
+    <!-- Branching overview (Git/Route53-inspired, light theme) -->
+    <section
+            class="space-y-5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+            aria-label="Incident response branching overview"
+    >
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            Branching overview
+          </p>
+          <p class="mt-1 text-xs text-slate-500 max-w-xl">
+            The incident always starts with <span class="font-semibold">Alert Received</span>
+            and <span class="font-semibold">Review Team Playbook</span>. From there you follow
+            either the Isolated or the LOB / Enterprise path, before converging again for
+            resolution and lessons learned.
+          </p>
+        </div>
+      </div>
+
+      <!-- Shared “spine” -->
+      <div class="space-y-4">
+        <div class="flex items-center gap-3">
+          <button
+                  type="button"
+                  class="im-node rounded-full border border-slate-300 bg-slate-50 px-4 py-2 text-xs sm:text-sm font-medium text-slate-900 shadow-sm hover:bg-white focus:outline-none focus:ring-2 focus:ring-sky-400"
+                  data-node-id="alert-received"
+                  data-node-path="common"
+          >
+            Alert Received
+          </button>
+
+          <div class="flex-1 border-t border-dashed border-slate-300"></div>
+
+          <button
+                  type="button"
+                  class="im-node rounded-full border border-slate-300 bg-slate-50 px-4 py-2 text-xs sm:text-sm font-medium text-slate-900 shadow-sm hover:bg-white focus:outline-none focus:ring-2 focus:ring-sky-400"
+                  data-node-id="review-team-playbook"
+                  data-node-path="common"
+          >
+            Review Team Playbook
+          </button>
+        </div>
+
+        <!-- Two lanes – Git-style branching -->
+        <div class="space-y-4 pt-2">
+          <!-- Isolated path lane -->
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+                  <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-[10px] font-semibold text-emerald-700">
+                    I
+                  </span>
+              <span class="text-xs font-medium text-emerald-800">
+                    Isolated Incident path
+                  </span>
+            </div>
+            <div class="relative flex items-center gap-3 pl-7">
+              <!-- dotted “route” -->
+              <div class="pointer-events-none absolute left-[1.1rem] right-0 h-px border-t-2 border-dashed border-emerald-300"></div>
+
+              <button
+                      type="button"
+                      class="im-node relative z-[1] h-8 w-8 rounded-full border border-emerald-300 bg-white text-[11px] font-semibold text-emerald-700 shadow-sm hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                      data-node-id="isolated-incident"
+                      data-node-path="isolated"
+                      aria-label="Isolated Incident"
+              >
+                3
+              </button>
+              <button
+                      type="button"
+                      class="im-node relative z-[1] h-8 w-8 rounded-full border border-emerald-300 bg-white text-[11px] font-semibold text-emerald-700 shadow-sm hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                      data-node-id="isolated-monitor-triage"
+                      data-node-path="isolated"
+                      aria-label="Isolated – Monitor &amp; Triage"
+              >
+                4
+              </button>
+              <button
+                      type="button"
+                      class="im-node relative z-[1] h-8 w-8 rounded-full border border-emerald-300 bg-white text-[11px] font-semibold text-emerald-700 shadow-sm hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                      data-node-id="isolated-determine-impact"
+                      data-node-path="isolated"
+                      aria-label="Isolated – Determine Impact"
+              >
+                5
+              </button>
+              <button
+                      type="button"
+                      class="im-node relative z-[1] h-8 w-8 rounded-full border border-emerald-300 bg-white text-[11px] font-semibold text-emerald-700 shadow-sm hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                      data-node-id="isolated-notify-stakeholders"
+                      data-node-path="isolated"
+                      aria-label="Isolated – Notify Stakeholders"
+              >
+                6
+              </button>
+            </div>
+          </div>
+
+          <!-- LOB / Enterprise path lane -->
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+                  <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-sky-100 text-[10px] font-semibold text-sky-700">
+                    L
+                  </span>
+              <span class="text-xs font-medium text-sky-800">
+                    LOB / Enterprise path
+                  </span>
+            </div>
+            <div class="relative flex items-center gap-3 pl-7">
+              <!-- dotted “route” -->
+              <div class="pointer-events-none absolute left-[1.1rem] right-0 h-px border-t-2 border-dashed border-sky-300"></div>
+
+              <button
+                      type="button"
+                      class="im-node relative z-[1] h-8 w-8 rounded-full border border-sky-300 bg-white text-[11px] font-semibold text-sky-700 shadow-sm hover:bg-sky-50 focus:outline-none focus:ring-2 focus:ring-sky-400"
+                      data-node-id="lob-incident"
+                      data-node-path="lob"
+                      aria-label="LOB / Enterprise Wide Incident"
+              >
+                3
+              </button>
+              <button
+                      type="button"
+                      class="im-node relative z-[1] h-8 w-8 rounded-full border border-sky-300 bg-white text-[11px] font-semibold text-sky-700 shadow-sm hover:bg-sky-50 focus:outline-none focus:ring-2 focus:ring-sky-400"
+                      data-node-id="lob-monitor-triage"
+                      data-node-path="lob"
+                      aria-label="LOB – Monitor &amp; Triage"
+              >
+                4
+              </button>
+              <button
+                      type="button"
+                      class="im-node relative z-[1] h-8 w-8 rounded-full border border-sky-300 bg-white text-[11px] font-semibold text-sky-700 shadow-sm hover:bg-sky-50 focus:outline-none focus:ring-2 focus:ring-sky-400"
+                      data-node-id="lob-determine-impact"
+                      data-node-path="lob"
+                      aria-label="LOB – Determine Impact"
+              >
+                5
+              </button>
+              <button
+                      type="button"
+                      class="im-node relative z-[1] h-8 w-8 rounded-full border border-sky-300 bg-white text-[11px] font-semibold text-sky-700 shadow-sm hover:bg-sky-50 focus:outline-none focus:ring-2 focus:ring-sky-400"
+                      data-node-id="lob-elect-manager"
+                      data-node-path="lob"
+                      aria-label="LOB – Elect Incident Manager"
+              >
+                6
+              </button>
+              <button
+                      type="button"
+                      class="im-node relative z-[1] h-8 w-8 rounded-full border border-sky-300 bg-white text-[11px] font-semibold text-sky-700 shadow-sm hover:bg-sky-50 focus:outline-none focus:ring-2 focus:ring-sky-400"
+                      data-node-id="lob-notify-stakeholders"
+                      data-node-path="lob"
+                      aria-label="LOB – Notify Stakeholders"
+              >
+                7
+              </button>
+            </div>
+          </div>
+
+          <!-- Convergence tail -->
+          <div class="flex flex-col items-center gap-3 pt-3">
+            <div class="flex w-full max-w-md items-center gap-3">
+              <div class="flex-1 border-t border-dashed border-slate-300"></div>
+              <div class="flex-1 border-t border-dashed border-slate-300"></div>
+            </div>
+            <div class="flex flex-wrap items-center justify-center gap-3">
+              <button
+                      type="button"
+                      class="im-node rounded-full border border-slate-300 bg-slate-50 px-4 py-2 text-xs sm:text-sm font-medium text-slate-900 shadow-sm hover:bg-white focus:outline-none focus:ring-2 focus:ring-sky-400"
+                      data-node-id="resolve-incident"
+                      data-node-path="common"
+              >
+                Resolve Incident
+              </button>
+              <button
+                      type="button"
+                      class="im-node rounded-full border border-slate-300 bg-slate-50 px-4 py-2 text-xs sm:text-sm font-medium text-slate-900 shadow-sm hover:bg-white focus:outline-none focus:ring-2 focus:ring-sky-400"
+                      data-node-id="lessons-learned"
+                      data-node-path="common"
+              >
+                Lessons Learned
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Flowbite-style horizontal stepper for the active path -->
+    <section
+            class="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+            aria-label="Incident response stepper"
+    >
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            Stepper
+          </p>
+          <p class="mt-1 text-xs text-slate-500">
+            Choose a path, then follow each numbered step. Click any step to open the
+            detailed guidance.
+          </p>
+        </div>
+
+        <!-- Path tabs -->
+        <div
+                class="inline-flex rounded-full bg-slate-100 p-1 text-xs font-medium sm:text-sm"
+                role="tablist"
+                aria-label="Incident response paths"
+        >
+          <button
+                  type="button"
+                  class="im-path-btn rounded-full bg-white px-4 py-1.5 text-slate-900 shadow-sm"
+                  data-path="isolated"
+                  role="tab"
+                  aria-selected="true"
+          >
+            Isolated Incident
+          </button>
+          <button
+                  type="button"
+                  class="im-path-btn rounded-full px-4 py-1.5 text-slate-600"
+                  data-path="lob"
+                  role="tab"
+                  aria-selected="false"
+          >
+            LOB / Enterprise
+          </button>
+        </div>
+      </div>
+
+      <!-- Horizontal stepper -->
+      <ol
+              id="im-stepper-list"
+              class="flex items-stretch gap-3 overflow-x-auto pt-1 text-xs sm:text-sm"
+      >
+        <!-- items filled by JS -->
+      </ol>
+
+      <p
+              id="im-stepper-path-label"
+              class="text-[11px] text-slate-500"
+      >
+        Path: Isolated Incident
+      </p>
+    </section>
+  </section>
+
+
+
+  <!-- Severity Matrices -->
+  <section
+          id="im-view-severity"
+          class="hidden space-y-8"
+          data-view="severity"
+          aria-labelledby="im-severity-title"
+  >
+    <header class="space-y-2">
+      <h2 id="im-severity-title" class="text-xl font-semibold text-slate-900">
+        Severity Matrices
+      </h2>
+      <p class="text-sm text-slate-600">
+        Severity matrices are essential to categorizing and correctly triaging incidents.
+        Each product maintains its own matrix, and they are reviewed on at least an annual
+        basis. Use the links below to quickly open the matrix that applies to your team.
+      </p>
+    </header>
+
+    <section class="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+      <!-- Product-specific matrices -->
+      <article
+              class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+              aria-label="Product severity matrices"
+      >
+        <h3 class="text-base font-semibold text-slate-900">
+          Product Severity Matrices
+        </h3>
+        <p class="mt-2 text-sm text-slate-600">
+          Familiarize yourself with the severity matrix for the product you support.
+          If this page is shared directly, links should deep-link into this section.
+        </p>
+
+        <div class="mt-4 space-y-4 text-sm">
+          <!-- Slingshot -->
+          <section class="rounded-lg border border-slate-200 bg-slate-50/60 p-4">
+            <h4 class="text-sm font-semibold text-slate-900">Slingshot</h4>
+            <p class="mt-1 text-xs text-slate-600">
+              Use the Slingshot severity matrix when working incidents related to
+              Slingshot services or features.
+            </p>
+            <a
+                    href="SLINGSHOT_SEVERITY_MATRIX_URL"
+                    target="_blank"
+                    rel="noreferrer"
+                    class="mt-3 inline-flex items-center text-xs font-medium text-sky-600 hover:text-sky-500"
+            >
+              Open Slingshot Severity Matrix
+              <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      class="ml-1 h-3.5 w-3.5"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+              >
+                <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M9 5h10M19 5v10M19 5 9 15M7 9v10h10"
+                />
+              </svg>
+            </a>
+          </section>
+
+          <!-- Databolt -->
+          <section class="rounded-lg border border-slate-200 bg-slate-50/60 p-4">
+            <h4 class="text-sm font-semibold text-slate-900">Databolt</h4>
+            <p class="mt-1 text-xs text-slate-600">
+              Use the Databolt severity matrix for incidents that impact Databolt APIs,
+              UI, or related data workflows.
+            </p>
+            <a
+                    href="DATABOLT_SEVERITY_MATRIX_URL"
+                    target="_blank"
+                    rel="noreferrer"
+                    class="mt-3 inline-flex items-center text-xs font-medium text-sky-600 hover:text-sky-500"
+            >
+              Open Databolt Severity Matrix
+              <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      class="ml-1 h-3.5 w-3.5"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+              >
+                <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M9 5h10M19 5v10M19 5 9 15M7 9v10h10"
+                />
+              </svg>
+            </a>
+          </section>
+
+          <!-- (Optional) Additional product matrices -->
+          <!--
+          <section class="rounded-lg border border-slate-200 bg-slate-50/60 p-4">
+            <h4 class="text-sm font-semibold text-slate-900">Another Product</h4>
+            <p class="mt-1 text-xs text-slate-600">
+              Short description of when to use this matrix.
+            </p>
+            <a
+              href="ANOTHER_PRODUCT_SEVERITY_MATRIX_URL"
+              target="_blank"
+              rel="noreferrer"
+              class="mt-3 inline-flex items-center text-xs font-medium text-sky-600 hover:text-sky-500"
+            >
+              Open Severity Matrix
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="ml-1 h-3.5 w-3.5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M9 5h10M19 5v10M19 5 9 15M7 9v10h10"
+                />
+              </svg>
+            </a>
+          </section>
+          -->
+        </div>
+      </article>
+
+      <!-- Enterprise / guidance -->
+      <aside
+              class="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+      >
+        <h3 class="text-base font-semibold text-slate-900">
+          Enterprise Severity Matrix
+        </h3>
+        <p class="text-sm text-slate-600">
+          If you are unsure which product matrix applies or your team does not yet
+          have a dedicated matrix, use the Enterprise Severity Matrix as the default
+          reference.
+        </p>
+
+        <a
+                href="ENTERPRISE_SEVERITY_MATRIX_URL"
+                target="_blank"
+                rel="noreferrer"
+                class="inline-flex items-center text-xs font-medium text-sky-600 hover:text-sky-500"
+        >
+          Open Enterprise Severity Matrix
+          <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="ml-1 h-3.5 w-3.5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+          >
+            <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M9 5h10M19 5v10M19 5 9 15M7 9v10h10"
+            />
+          </svg>
+        </a>
+
+        <div class="pt-2 border-t border-slate-200">
+          <p class="text-xs text-slate-600">
+            When sharing this page with others, ensure that deep links bring them
+            directly to this Severity Matrices section so they can quickly open the
+            correct matrix.
+          </p>
+        </div>
+      </aside>
+    </section>
+  </section>
+
+
+
+
+</main>
+
+<!-- Node details modal -->
+<div
+        id="im-node-modal-backdrop"
+        class="fixed inset-0 z-40 hidden items-center justify-center bg-slate-900/60 p-4"
+        aria-hidden="true"
+>
+  <div
+          class="max-w-lg rounded-2xl bg-white shadow-xl ring-1 ring-slate-900/10"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="im-node-modal-title"
+  >
+    <div class="border-b border-slate-100 px-5 py-3">
+      <h3 id="im-node-modal-title" class="text-base font-semibold text-slate-900">
+        Node title
+      </h3>
+      <p class="mt-1 text-xs text-slate-500">
+        Step in the incident response flow.
+      </p>
+    </div>
+    <div class="px-5 py-4">
+      <p id="im-node-modal-body" class="text-sm leading-relaxed text-slate-700">
+        Node description.
+      </p>
+    </div>
+    <div
+            class="flex items-center justify-between gap-3 border-t border-slate-100 bg-slate-50 px-5 py-3"
+    >
+      <button
+              id="im-node-modal-close"
+              type="button"
+              class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-100"
+      >
+        Close
+      </button>
+      <div class="flex items-center gap-2">
+        <button
+                id="im-node-modal-prev"
+                type="button"
+                class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Previous Step
+        </button>
+        <button
+                id="im-node-modal-next"
+                type="button"
+                class="rounded-lg bg-sky-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-sky-500 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          Next Step
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // -------- Local view navigation --------
+  (function () {
+    const views = document.querySelectorAll("[data-view]");
+    const navButtons = document.querySelectorAll(".im-nav-btn");
+    const overviewCards = document.querySelectorAll("[data-go-to-view]");
+
+    function setView(target) {
+      views.forEach((section) => {
+        section.classList.toggle(
+                "hidden",
+                section.getAttribute("data-view") !== target
+        );
+      });
+
+      navButtons.forEach((btn) => {
+        const isActive = btn.getAttribute("data-view-target") === target;
+        btn.setAttribute("data-active", isActive ? "true" : "false");
+      });
+
+      // Scroll back to top of content area for context.
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    navButtons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const view = btn.getAttribute("data-view-target");
+        setView(view);
+      });
+    });
+
+    overviewCards.forEach((card) => {
+      card.addEventListener("click", () => {
+        const view = card.getAttribute("data-go-to-view");
+        setView(view);
+      });
+    });
+  })();
+
+  // -------- Branch toggle logic --------
+  // (function () {
+  //   const toggles = document.querySelectorAll(".im-branch-toggle");
+  //
+  //   toggles.forEach((btn) => {
+  //     btn.addEventListener("click", () => {
+  //       const branch = btn.getAttribute("data-branch");
+  //       const panel = document.querySelector(
+  //               `[data-branch-panel="${branch}"]`
+  //       );
+  //       if (!panel) return;
+  //
+  //       const isHidden = panel.classList.toggle("hidden");
+  //       btn.textContent = isHidden ? "+" : "−";
+  //     });
+  //   });
+  // })();
+
+  // -------- Node modal logic --------
+  // (function () {
+  //   const NODE_DETAILS = {
+  //     "alert-received": {
+  //       title: "Alert Received",
+  //       description:
+  //               "Alerts are typically received from Observe dashboards, New Relic synthetic monitoring, or PagerDuty incidents. Read the entire page or alert description to understand what triggered the alert, what environment is affected, and whether you are required to join a bridge immediately."
+  //     },
+  //     "review-team-playbook": {
+  //       title: "Review Team Playbook",
+  //       description:
+  //               "Open the appropriate team playbook or runbook for this service. Confirm ownership, check recent changes, and follow any quick triage steps. If the playbook is missing or unclear, capture notes so it can be improved during the post-incident review."
+  //     },
+  //     "isolated-incident": {
+  //       title: "Isolated Incident",
+  //       description:
+  //               "Classify the incident as isolated when the impact is limited to a single service, tenant, or narrow user segment. Coordination is primarily within the owning team, with targeted communication to impacted partners."
+  //     },
+  //     "isolated-monitor-triage": {
+  //       title: "Isolated: Monitor & Triage",
+  //       description:
+  //               "Use dashboards, logs, and traces to confirm the scope of impact. Validate whether the issue is still actively occurring and identify the earliest error signals, symptoms, or saturation points that led to the alert."
+  //     },
+  //     "isolated-determine-impact": {
+  //       title: "Isolated: Determine Impact",
+  //       description:
+  //               "Estimate how many tenants, requests, or transactions are affected. Validate whether there are workarounds and whether customer-facing SLAs or regulatory commitments are at risk."
+  //     },
+  //     "isolated-notify-stakeholders": {
+  //       title: "Isolated: Notify Stakeholders",
+  //       description:
+  //               "Communicate with stakeholders that rely on this service—such as partner teams and customer support. Provide a concise summary, known impact, and next update time. Capture questions for the post-incident review."
+  //     },
+  //     "lob-incident": {
+  //       title: "LOB / Enterprise Wide Incident",
+  //       description:
+  //               "Classify the incident as LOB or enterprise-wide when multiple services, regions, or platforms are affected or when impact crosses business boundaries. Broader coordination, communication, and leadership visibility are required."
+  //     },
+  //     "lob-monitor-triage": {
+  //       title: "LOB / Enterprise: Monitor & Triage",
+  //       description:
+  //               "Gather signals across impacted services. Ensure that each critical dependency has an owner on the bridge. Use shared dashboards to validate whether the issue is systemic or isolated to a particular region or tenant."
+  //     },
+  //     "lob-determine-impact": {
+  //       title: "LOB / Enterprise: Determine Impact",
+  //       description:
+  //               "Quantify the business impact: customer-facing downtime, failed transactions, data risk, or regulatory obligations. Align on the initial severity using the C1S severity matrix and reassess as new information arrives."
+  //     },
+  //     "lob-elect-manager": {
+  //       title: "Elect LOB Incident Manager",
+  //       description:
+  //               "For enterprise incidents, designate an Incident Manager who owns coordination, time-boxing, decision recording, and communication. This person should not be hands-on troubleshooting so they can focus on orchestration."
+  //     },
+  //     "lob-notify-stakeholders": {
+  //       title: "LOB / Enterprise: Notify Stakeholders",
+  //       description:
+  //               "Communicate broadly with stakeholders across the line of business. Share the current severity, symptoms, known impact, and next update time. Partner with communications or customer support for external messaging if needed."
+  //     },
+  //     "resolve-incident": {
+  //       title: "Resolve Incident",
+  //       description:
+  //               "Once impact has been mitigated or eliminated, transition the incident to a stable state. Validate with monitoring, confirm that customer-facing behavior is restored, and document any temporary mitigations or follow-up actions."
+  //     },
+  //     "lessons-learned": {
+  //       title: "Lessons Learned",
+  //       description:
+  //               "Schedule and run a blameless post-incident review. Capture the timeline, contributing factors, and action items. Prioritize work that reduces recurrence risk, improves detection, and clarifies runbooks or ownership."
+  //     }
+  //   };
+  //
+  //   const STEP_ORDER = [
+  //     "alert-received",
+  //     "review-team-playbook",
+  //     "isolated-incident",
+  //     "isolated-monitor-triage",
+  //     "isolated-determine-impact",
+  //     "isolated-notify-stakeholders",
+  //     "lob-incident",
+  //     "lob-monitor-triage",
+  //     "lob-determine-impact",
+  //     "lob-elect-manager",
+  //     "lob-notify-stakeholders",
+  //     "resolve-incident",
+  //     "lessons-learned"
+  //   ];
+  //
+  //   const backdrop = document.getElementById("im-node-modal-backdrop");
+  //   const titleEl = document.getElementById("im-node-modal-title");
+  //   const bodyEl = document.getElementById("im-node-modal-body");
+  //   const closeBtn = document.getElementById("im-node-modal-close");
+  //   const prevBtn = document.getElementById("im-node-modal-prev");
+  //   const nextBtn = document.getElementById("im-node-modal-next");
+  //   const nodeButtons = document.querySelectorAll("[data-node-id]");
+  //
+  //   let currentIndex = -1;
+  //   let activeNodeButton = null;
+  //
+  //   function setActiveNode(nodeId) {
+  //     // remove highlight from previous
+  //     if (activeNodeButton) {
+  //       activeNodeButton.classList.remove("im-node-active");
+  //     }
+  //
+  //     const btn = document.querySelector(
+  //             `[data-node-id="${nodeId}"]`
+  //     );
+  //     if (btn) {
+  //       btn.classList.add("im-node-active");
+  //       activeNodeButton = btn;
+  //     } else {
+  //       activeNodeButton = null;
+  //     }
+  //   }
+  //
+  //   function openModal(nodeId) {
+  //     const details = NODE_DETAILS[nodeId];
+  //     if (!details) return;
+  //
+  //     currentIndex = STEP_ORDER.indexOf(nodeId);
+  //     if (currentIndex === -1) currentIndex = 0;
+  //
+  //     titleEl.textContent = details.title;
+  //     bodyEl.textContent = details.description;
+  //
+  //     prevBtn.disabled = currentIndex <= 0;
+  //     nextBtn.disabled = currentIndex >= STEP_ORDER.length - 1;
+  //
+  //     setActiveNode(nodeId);
+  //
+  //     backdrop.classList.remove("hidden");
+  //     document.body.classList.add("im-modal-open");
+  //     backdrop.setAttribute("aria-hidden", "false");
+  //   }
+  //
+  //   function closeModal() {
+  //     backdrop.classList.add("hidden");
+  //     document.body.classList.remove("im-modal-open");
+  //     backdrop.setAttribute("aria-hidden", "true");
+  //     if (activeNodeButton) {
+  //       activeNodeButton.classList.remove("im-node-active");
+  //       activeNodeButton = null;
+  //     }
+  //   }
+  //
+  //   nodeButtons.forEach((btn) => {
+  //     btn.addEventListener("click", () => {
+  //       const nodeId = btn.getAttribute("data-node-id");
+  //       openModal(nodeId);
+  //     });
+  //   });
+  //
+  //   closeBtn.addEventListener("click", closeModal);
+  //
+  //   nextBtn.addEventListener("click", () => {
+  //     if (currentIndex < STEP_ORDER.length - 1) {
+  //       currentIndex += 1;
+  //       const nodeId = STEP_ORDER[currentIndex];
+  //       openModal(nodeId);
+  //     }
+  //   });
+  //
+  //   prevBtn.addEventListener("click", () => {
+  //     if (currentIndex > 0) {
+  //       currentIndex -= 1;
+  //       const nodeId = STEP_ORDER[currentIndex];
+  //       openModal(nodeId);
+  //     }
+  //   });
+  //
+  //   backdrop.addEventListener("click", (event) => {
+  //     if (event.target === backdrop) {
+  //       closeModal();
+  //     }
+  //   });
+  //
+  //   document.addEventListener("keydown", (event) => {
+  //     if (event.key === "Escape" && !backdrop.classList.contains("hidden")) {
+  //       closeModal();
+  //     }
+  //   });
+  // })();
+
+
+
+    // -------- Local view navigation (keep as-is if you already have this) --------
+    (function () {
+    const views = document.querySelectorAll("[data-view]");
+    const navButtons = document.querySelectorAll(".im-nav-btn");
+    const overviewCards = document.querySelectorAll("[data-go-to-view]");
+
+    function setView(target) {
+    views.forEach((section) => {
+    section.classList.toggle(
+    "hidden",
+    section.getAttribute("data-view") !== target
+    );
+  });
+
+    navButtons.forEach((btn) => {
+    const isActive = btn.getAttribute("data-view-target") === target;
+    btn.setAttribute("data-active", isActive ? "true" : "false");
+  });
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+    navButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+    const view = btn.getAttribute("data-view-target");
+    setView(view);
+  });
+  });
+
+    overviewCards.forEach((card) => {
+    card.addEventListener("click", () => {
+    const view = card.getAttribute("data-go-to-view");
+    setView(view);
+  });
+  });
+  })();
+
+    // -------- Path, stepper, and node modal logic --------
+    (function () {
+    const NODE_DETAILS = {
+    "alert-received": {
+    title: "Alert Received",
+    description:
+    "Alerts are typically received from Observe dashboards, New Relic synthetic monitoring, or PagerDuty incidents. Read the full alert message to understand what triggered it, which environment is affected, and whether you are required to join a bridge immediately."
+  },
+    "review-team-playbook": {
+    title: "Review Team Playbook",
+    description:
+    "Open the appropriate team playbook or runbook. Confirm ownership, check recent changes, and follow any quick triage steps. If the playbook is missing or unclear, capture notes to improve it during the post-incident review."
+  },
+    "isolated-incident": {
+    title: "Isolated Incident",
+    description:
+    "Classify the incident as isolated when impact is limited to a single service, tenant, or narrow user segment. Coordination is primarily within the owning team, with targeted communication to impacted partners."
+  },
+    "isolated-monitor-triage": {
+    title: "Isolated: Monitor & Triage",
+    description:
+    "Use dashboards, logs, and traces to confirm the scope of impact. Validate whether the issue is still occurring and identify earliest error signals or saturation points that led to the alert."
+  },
+    "isolated-determine-impact": {
+    title: "Isolated: Determine Impact",
+    description:
+    "Estimate how many tenants, requests, or transactions are affected. Validate whether there are workarounds and whether customer-facing SLAs or regulatory commitments are at risk."
+  },
+    "isolated-notify-stakeholders": {
+    title: "Isolated: Notify Stakeholders",
+    description:
+    "Communicate with stakeholders that rely on this service—partner teams, customer support, and product owners. Provide a concise summary, known impact, and next update time."
+  },
+    "lob-incident": {
+    title: "LOB / Enterprise Wide Incident",
+    description:
+    "Classify the incident as LOB or enterprise-wide when multiple services, regions, or platforms are affected, or when the impact crosses business boundaries. Broader coordination and leadership visibility are required."
+  },
+    "lob-monitor-triage": {
+    title: "LOB / Enterprise: Monitor & Triage",
+    description:
+    "Gather signals across impacted services. Ensure each critical dependency has an owner on the bridge. Use shared dashboards to confirm whether the issue is systemic or localized."
+  },
+    "lob-determine-impact": {
+    title: "LOB / Enterprise: Determine Impact",
+    description:
+    "Quantify business impact: downtime, failed transactions, data risk, or regulatory obligations. Align on initial severity using the C1S severity matrix and reassess as new information arrives."
+  },
+    "lob-elect-manager": {
+    title: "Elect LOB Incident Manager",
+    description:
+    "Designate an Incident Manager who owns coordination, time-boxing, decision recording, and communication. They should avoid hands-on troubleshooting so they can focus on orchestration."
+  },
+    "lob-notify-stakeholders": {
+    title: "LOB / Enterprise: Notify Stakeholders",
+    description:
+    "Communicate broadly with stakeholders across the line of business. Share the current severity, symptoms, known impact, and next update time. Partner with communications or support for external messaging if needed."
+  },
+    "resolve-incident": {
+    title: "Resolve Incident",
+    description:
+    "Once impact has been mitigated or eliminated, transition the incident to a stable state. Validate with monitoring, confirm that customer-facing behavior is restored, and document any temporary mitigations or follow-up actions."
+  },
+    "lessons-learned": {
+    title: "Lessons Learned",
+    description:
+    "Schedule and run a blameless post-incident review. Capture the timeline, contributing factors, and action items. Prioritize work that reduces recurrence risk, improves detection, and clarifies runbooks or ownership."
+  }
+  };
+
+    const PATHS = {
+    isolated: [
+    "alert-received",
+    "review-team-playbook",
+    "isolated-incident",
+    "isolated-monitor-triage",
+    "isolated-determine-impact",
+    "isolated-notify-stakeholders",
+    "resolve-incident",
+    "lessons-learned"
+    ],
+    lob: [
+    "alert-received",
+    "review-team-playbook",
+    "lob-incident",
+    "lob-monitor-triage",
+    "lob-determine-impact",
+    "lob-elect-manager",
+    "lob-notify-stakeholders",
+    "resolve-incident",
+    "lessons-learned"
+    ]
+  };
+
+    let activePath = "isolated";
+    let currentIndex = 0;
+
+    const pathButtons = document.querySelectorAll(".im-path-btn");
+    const nodeButtons = document.querySelectorAll("[data-node-id]");
+    const stepperList = document.getElementById("im-stepper-list");
+    const stepperPathLabel = document.getElementById("im-stepper-path-label");
+
+    const backdrop = document.getElementById("im-node-modal-backdrop");
+    const titleEl = document.getElementById("im-node-modal-title");
+    const bodyEl = document.getElementById("im-node-modal-body");
+    const closeBtn = document.getElementById("im-node-modal-close");
+    const prevBtn = document.getElementById("im-node-modal-prev");
+    const nextBtn = document.getElementById("im-node-modal-next");
+
+    let activeNodeButton = null;
+
+    // ----- helpers -----
+    function setActiveNodeHighlight(nodeId) {
+    if (activeNodeButton) {
+    activeNodeButton.classList.remove("ring-2", "ring-sky-400");
+  }
+    const btn = document.querySelector(`[data-node-id="${nodeId}"]`);
+    if (btn) {
+    btn.classList.add("ring-2", "ring-sky-400");
+    activeNodeButton = btn;
+  } else {
+    activeNodeButton = null;
+  }
+  }
+
+    function openModal(nodeId) {
+    const details = NODE_DETAILS[nodeId];
+    if (!details) return;
+
+    const steps = PATHS[activePath];
+    const idx = steps.indexOf(nodeId);
+    currentIndex = idx !== -1 ? idx : 0;
+
+    titleEl.textContent = details.title;
+    bodyEl.textContent = details.description;
+
+    prevBtn.disabled = currentIndex <= 0;
+    nextBtn.disabled = currentIndex >= steps.length - 1;
+
+    setActiveNodeHighlight(nodeId);
+    highlightStepperStep(nodeId);
+
+    backdrop.classList.remove("hidden");
+    document.body.classList.add("im-modal-open");
+    backdrop.setAttribute("aria-hidden", "false");
+  }
+
+    function closeModal() {
+    backdrop.classList.add("hidden");
+    document.body.classList.remove("im-modal-open");
+    backdrop.setAttribute("aria-hidden", "true");
+    if (activeNodeButton) {
+    activeNodeButton.classList.remove("ring-2", "ring-sky-400");
+    activeNodeButton = null;
+  }
+  }
+
+    function highlightStepperStep(nodeId) {
+    const items = stepperList.querySelectorAll("[data-step-node-id]");
+    items.forEach((item) => {
+    const isActive = item.getAttribute("data-step-node-id") === nodeId;
+    item.classList.toggle("bg-sky-50", isActive);
+    item.classList.toggle("border-sky-300", isActive);
+  });
+  }
+
+    function renderStepper(path) {
+    const ids = PATHS[path];
+    stepperList.innerHTML = "";
+
+    ids.forEach((id, index) => {
+    const meta = NODE_DETAILS[id];
+    if (!meta) return;
+
+    const li = document.createElement("li");
+    li.className =
+    "group flex min-w-[12rem] flex-1 items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 cursor-pointer hover:bg-white";
+    li.setAttribute("data-step-node-id", id);
+
+    const circle = document.createElement("div");
+    circle.className =
+    "mt-1 flex h-7 w-7 flex-none items-center justify-center rounded-full border border-slate-300 bg-white text-[11px] font-semibold text-slate-700 group-hover:border-sky-400 group-hover:text-sky-700";
+    circle.textContent = index + 1;
+
+    const textWrap = document.createElement("div");
+    textWrap.className = "flex flex-col";
+
+    const title = document.createElement("span");
+    title.className = "text-xs font-medium text-slate-900";
+    title.textContent = meta.title;
+
+    const desc = document.createElement("span");
+    desc.className = "mt-0.5 text-[11px] text-slate-500 line-clamp-2";
+    desc.textContent = meta.description;
+
+    textWrap.appendChild(title);
+    textWrap.appendChild(desc);
+
+    li.appendChild(circle);
+    li.appendChild(textWrap);
+
+    li.addEventListener("click", () => {
+    openModal(id);
+  });
+
+    stepperList.appendChild(li);
+  });
+
+    stepperPathLabel.textContent =
+    path === "isolated"
+    ? "Path: Isolated Incident"
+    : "Path: LOB / Enterprise";
+  }
+
+    function setActivePath(path) {
+    activePath = path;
+
+    pathButtons.forEach((btn) => {
+    const isActive = btn.getAttribute("data-path") === path;
+    btn.classList.toggle("bg-white", isActive);
+    btn.classList.toggle("shadow-sm", isActive);
+    btn.classList.toggle("text-slate-900", isActive);
+    btn.classList.toggle("text-slate-600", !isActive);
+    btn.setAttribute("aria-selected", isActive ? "true" : "false");
+  });
+
+    renderStepper(path);
+    highlightStepperStep(PATHS[path][0]);
+  }
+
+    // ----- event wiring -----
+    // Path tabs
+    pathButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+    const path = btn.getAttribute("data-path");
+    if (path && path !== activePath) {
+    setActivePath(path);
+  }
+  });
+  });
+
+    // Branch diagram nodes
+    nodeButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+    const id = btn.getAttribute("data-node-id");
+    const nodePath = btn.getAttribute("data-node-path");
+
+    if (nodePath === "isolated" && activePath !== "isolated") {
+    setActivePath("isolated");
+  } else if (nodePath === "lob" && activePath !== "lob") {
+    setActivePath("lob");
+  }
+    openModal(id);
+  });
+  });
+
+    // Modal buttons
+    closeBtn.addEventListener("click", closeModal);
+
+    nextBtn.addEventListener("click", () => {
+    const steps = PATHS[activePath];
+    if (currentIndex < steps.length - 1) {
+    currentIndex += 1;
+    openModal(steps[currentIndex]);
+  }
+  });
+
+    prevBtn.addEventListener("click", () => {
+    const steps = PATHS[activePath];
+    if (currentIndex > 0) {
+    currentIndex -= 1;
+    openModal(steps[currentIndex]);
+  }
+  });
+
+    backdrop.addEventListener("click", (event) => {
+    if (event.target === backdrop) {
+    closeModal();
+  }
+  });
+
+    document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !backdrop.classList.contains("hidden")) {
+    closeModal();
+  }
+  });
+
+    // Init
+    setActivePath(activePath);
+  })();
+
+
+
+</script>
+</body>
+</html>
